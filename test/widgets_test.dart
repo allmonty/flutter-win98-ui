@@ -501,6 +501,25 @@ void main() {
       expect(find.text('Page 1'), findsNothing);
       expect(changes, [1]);
     });
+
+    testWidgets('a controlled index only changes when the parent rebuilds', (tester) async {
+      final changes = <int>[];
+      Widget view(int index) => Win98TabView(
+        index: index,
+        onChanged: changes.add,
+        tabs: [
+          Win98Tab(label: 'One', builder: (_) => const Text('Page 1')),
+          Win98Tab(label: 'Two', builder: (_) => const Text('Page 2')),
+        ],
+      );
+      await tester.pumpHarness(view(0), size: const Size(360, 200));
+      await tester.tap(find.text('Two'));
+      await tester.pump();
+      expect(changes, [1]);
+      expect(find.text('Page 1'), findsOneWidget, reason: 'parent has not switched yet');
+      await tester.pumpHarness(view(1), size: const Size(360, 200));
+      expect(find.text('Page 2'), findsOneWidget);
+    });
   });
 
   group('Win98TabView multi-row', () {
@@ -612,6 +631,57 @@ void main() {
       await tester.testTextInput.receiveAction(TextInputAction.done);
       expect(controller.text, 'hello');
       expect(submitted, 'hello');
+    });
+
+    testWidgets('passes obscureText, readOnly and maxLines to EditableText', (tester) async {
+      final controller = TextEditingController(text: 'secret');
+      addTearDown(controller.dispose);
+      await tester.pumpHarness(Win98TextField(controller: controller, obscureText: true));
+      expect(tester.widget<EditableText>(find.byType(EditableText)).obscureText, isTrue);
+      await tester.pumpHarness(Win98TextField(controller: controller, readOnly: true));
+      expect(tester.widget<EditableText>(find.byType(EditableText)).readOnly, isTrue);
+      await tester.pumpHarness(Win98TextField(controller: controller, maxLines: 4));
+      final editable = tester.widget<EditableText>(find.byType(EditableText));
+      expect(editable.maxLines, 4);
+      expect(editable.keyboardType, TextInputType.multiline);
+    });
+
+    testWidgets('a multi-line field shows a scrollbar once the text overflows', (tester) async {
+      final controller = TextEditingController(text: List.filled(12, 'line').join('\n'));
+      addTearDown(controller.dispose);
+      await tester.pumpHarness(Win98TextField(controller: controller, maxLines: 3));
+      await tester.pump();
+      final bar = find.descendant(
+        of: find.byType(Win98Scrollbar),
+        matching: find.byType(Win98Button),
+      );
+      expect(bar, findsWidgets, reason: 'arrow buttons appear when content overflows');
+    });
+
+    testWidgets('a disabled field cannot take focus or be edited', (tester) async {
+      final controller = TextEditingController(text: 'fixed');
+      addTearDown(controller.dispose);
+      await tester.pumpHarness(Win98TextField(controller: controller, enabled: false));
+      await tester.tap(find.byType(Win98TextField));
+      await tester.pump();
+      final editable = tester.widget<EditableText>(find.byType(EditableText));
+      expect(editable.focusNode.hasFocus, isFalse);
+      expect(editable.readOnly, isTrue);
+    });
+
+    testWidgets('maxLength runs after the given input formatters', (tester) async {
+      final controller = TextEditingController();
+      addTearDown(controller.dispose);
+      await tester.pumpHarness(
+        Win98TextField(
+          controller: controller,
+          maxLength: 3,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        ),
+      );
+      await tester.tap(find.byType(Win98TextField));
+      await tester.enterText(find.byType(EditableText), 'a1b2c3d4');
+      expect(controller.text, '123');
     });
   });
 
