@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:win98_ui/src/tab_label_cache.dart';
 import 'package:win98_ui/win98_ui.dart';
 
 import 'harness.dart';
@@ -39,6 +40,46 @@ void main() {
       expect(data.desktop, const Color(0xFF123456));
       expect(style.fontSize, 20);
       expect(style.fontFamily, 'packages/win98_ui/PixelifySans');
+    });
+
+    test('copyWith replaces every field and equality follows the fields', () {
+      const base = Win98ThemeData();
+      const c = Color(0xFF123456);
+      final changed = [
+        base.copyWith(face: c),
+        base.copyWith(highlight: c),
+        base.copyWith(light: c),
+        base.copyWith(shadow: c),
+        base.copyWith(darkShadow: c),
+        base.copyWith(window: c),
+        base.copyWith(text: c),
+        base.copyWith(disabledText: c),
+        base.copyWith(selection: c),
+        base.copyWith(selectionText: c),
+        base.copyWith(desktop: c),
+        base.copyWith(activeTitleStart: c),
+        base.copyWith(activeTitleEnd: c),
+        base.copyWith(inactiveTitleStart: c),
+        base.copyWith(inactiveTitleEnd: c),
+        base.copyWith(titleText: c),
+        base.copyWith(tooltip: c),
+        base.copyWith(fontFamily: 'Other'),
+        base.copyWith(fontPackage: 'other'),
+        base.copyWith(fontSize: 1),
+        base.copyWith(controlHeight: 1),
+        base.copyWith(titleBarHeight: 1),
+        base.copyWith(scrollbarSize: 1),
+      ];
+      for (final theme in changed) {
+        expect(theme, isNot(base));
+      }
+      expect(base.copyWith(), base);
+      expect(base.copyWith().hashCode, base.hashCode);
+    });
+
+    test('a new font family drops the bundled font package', () {
+      expect(const Win98ThemeData().copyWith(fontFamily: 'Mine').fontPackage, isNull);
+      expect(const Win98ThemeData().copyWith(fontFamily: 'X', fontPackage: 'p').fontPackage, 'p');
     });
   });
 
