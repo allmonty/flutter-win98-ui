@@ -4,7 +4,7 @@ A Windows 98 look-and-feel widget kit for Flutter. Depends only on
 `package:flutter/widgets.dart` — no Material or Cupertino — so it drops into
 any app.
 
-Built for [Bitmapper](../../README.md), kept self-contained so it can be
+Built for [Bitmapper](https://github.com/allmonty/bitmapper-app), kept self-contained so it can be
 reused as-is (path/git dependency) or published.
 
 ## Setup
@@ -12,7 +12,9 @@ reused as-is (path/git dependency) or published.
 ```yaml
 dependencies:
   win98_ui:
-    path: packages/win98_ui   # or a git dependency
+    git:
+      url: https://github.com/allmonty/flutter-win98-ui.git
+      ref: main
 ```
 
 Wrap your app in a `Win98Theme` *above* the navigator so dialogs inherit it:
