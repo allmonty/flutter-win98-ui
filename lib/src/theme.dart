@@ -110,6 +110,8 @@ class Win98ThemeData {
     fontSize: fontSize,
     color: text,
     height: 1.2,
+    // Pixelify Sans's "fi" ligature reads as an "A".
+    fontFeatures: const [FontFeature.disable('liga')],
   );
 
   /// [textStyle] in bold, for default buttons and captions.

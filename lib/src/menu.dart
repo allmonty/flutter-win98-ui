@@ -475,7 +475,12 @@ class _MenuItemRow extends StatelessWidget {
               children: [
                 SizedBox(
                   width: 24,
-                  child: item.checked ? Text('✓', style: style, textAlign: TextAlign.center) : null,
+                  // A bitmap, not '✓': the pixel font has no checkmark glyph.
+                  child: item.checked
+                      ? Center(
+                          child: PixelGlyph(Win98Glyphs.check, color: style.color, pixelSize: 1.5),
+                        )
+                      : null,
                 ),
                 Expanded(child: Text(item.label, style: style)),
                 if (hasSub) ...[

@@ -79,7 +79,8 @@ class Win98TreeView<T> extends StatelessWidget {
         final node = nodes[i];
         final last = i == nodes.length - 1;
         final open = expanded.contains(node.value);
-        rows.add(_row(theme, node, moreAbove, last, open));
+        final first = moreAbove.isEmpty && i == 0;
+        rows.add(_row(theme, node, moreAbove, first, last, open));
         if (open && node.children.isNotEmpty) visit(node.children, [...moreAbove, !last]);
       }
     }
@@ -101,6 +102,7 @@ class Win98TreeView<T> extends StatelessWidget {
     Win98ThemeData theme,
     Win98TreeNode<T> node,
     List<bool> moreAbove,
+    bool first,
     bool last,
     bool open,
   ) {
@@ -114,6 +116,7 @@ class Win98TreeView<T> extends StatelessWidget {
         painter: _TreeLinesPainter(
           theme: theme,
           moreAbove: moreAbove,
+          first: first,
           last: last,
           box: hasChildren ? open : null,
           indent: _indent,
@@ -181,6 +184,7 @@ class _TreeLinesPainter extends CustomPainter {
   _TreeLinesPainter({
     required this.theme,
     required this.moreAbove,
+    required this.first,
     required this.last,
     required this.box,
     required this.indent,
@@ -188,6 +192,9 @@ class _TreeLinesPainter extends CustomPainter {
 
   final Win98ThemeData theme;
   final List<bool> moreAbove;
+
+  /// The tree's first root: its line starts at the row's middle.
+  final bool first;
   final bool last;
   final bool? box;
   final double indent;
@@ -212,7 +219,7 @@ class _TreeLinesPainter extends CustomPainter {
       if (moreAbove[d]) vline((d * indent + indent / 2).floorToDouble(), 0, size.height);
     }
     final x = (moreAbove.length * indent + indent / 2).floorToDouble();
-    vline(x, 0, last ? midY : size.height);
+    vline(x, first ? midY : 0, last ? midY : size.height);
     hline(x, x + indent / 2, midY);
 
     final open = box;
@@ -232,6 +239,7 @@ class _TreeLinesPainter extends CustomPainter {
   @override
   bool shouldRepaint(_TreeLinesPainter old) =>
       old.theme != theme ||
+      old.first != first ||
       old.last != last ||
       old.box != box ||
       old.indent != indent ||
