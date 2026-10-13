@@ -1007,4 +1007,145 @@ void main() {
       expect(find.text('Copy'), findsNothing);
     });
   });
+
+  group('Win98ListView', () {
+    testWidgets('selects, activates and sorts', (tester) async {
+      final selected = <String>[], activated = <String>[], sorted = <int>[];
+      await tester.pumpHarness(
+        Win98ListView<String>(
+          columns: const [
+            Win98ListColumn(label: 'Name', flex: 2),
+            Win98ListColumn(label: 'Size', width: 80, numeric: true),
+          ],
+          rows: const [
+            Win98ListRow(value: 'a', cells: ['autoexec.bat', '1 KB']),
+            Win98ListRow(value: 'c', cells: ['config.sys', '2 KB']),
+          ],
+          selected: 'a',
+          onSelected: selected.add,
+          onActivated: activated.add,
+          sortColumn: 1,
+          onSort: sorted.add,
+        ),
+      );
+      await tester.tap(find.text('config.sys'));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(selected, ['c']);
+      await tester.tap(find.text('Name'));
+      expect(sorted, [0]);
+      await tester.tap(find.text('autoexec.bat'));
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(find.text('autoexec.bat'));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(activated, ['a']);
+      // Columns line up: a numeric cell is right-aligned under its header.
+      expect(
+        tester.getRect(find.text('2 KB')).right,
+        closeTo(tester.getRect(find.text('Size')).right, 16),
+      );
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('Win98TreeView', () {
+    List<Win98TreeNode<String>> roots() => const [
+      Win98TreeNode(
+        value: 'c',
+        label: 'C:',
+        children: [
+          Win98TreeNode(value: 'win', label: 'WINDOWS'),
+          Win98TreeNode(value: 'dos', label: 'DOS'),
+        ],
+      ),
+      Win98TreeNode(value: 'd', label: 'D:'),
+    ];
+
+    testWidgets('shows children only when expanded', (tester) async {
+      await tester.pumpHarness(
+        Win98TreeView<String>(
+          roots: roots(),
+          expanded: const {},
+          onExpansionChanged: null,
+          selected: null,
+          onSelected: null,
+        ),
+      );
+      expect(find.text('C:'), findsOneWidget);
+      expect(find.text('WINDOWS'), findsNothing);
+      await tester.pumpHarness(
+        Win98TreeView<String>(
+          roots: roots(),
+          expanded: const {'c'},
+          onExpansionChanged: null,
+          selected: null,
+          onSelected: null,
+        ),
+      );
+      expect(find.text('WINDOWS'), findsOneWidget);
+      expect(find.text('DOS'), findsOneWidget);
+    });
+
+    testWidgets('the box toggles, a tap selects, a double-tap toggles', (tester) async {
+      final toggles = <(String, bool)>[], selected = <String>[];
+      await tester.pumpHarness(
+        Win98TreeView<String>(
+          roots: roots(),
+          expanded: const {},
+          onExpansionChanged: (v, open) => toggles.add((v, open)),
+          selected: 'd',
+          onSelected: selected.add,
+        ),
+      );
+      // The [+] box sits left of the label.
+      final label = tester.getRect(find.text('C:'));
+      await tester.tapAt(Offset(label.left - 14, label.center.dy));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(toggles, [('c', true)]);
+      await tester.tap(find.text('C:'));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(selected, ['c']);
+      await tester.tap(find.text('C:'));
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(find.text('C:'));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(toggles.last, ('c', true));
+      expect(toggles, hasLength(2));
+    });
+  });
+
+  group('Win98Taskbar', () {
+    testWidgets('opens the Start menu and presses tasks', (tester) async {
+      var shutDown = 0;
+      final pressed = <String>[];
+      // The taskbar sits at the bottom of the screen, as in a real app.
+      tester.view.physicalSize = const Size(400, 300);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpHarness(
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: Win98Taskbar(
+            startMenu: [Win98MenuItem(label: 'Shut Down...', onSelected: () => shutDown++)],
+            tasks: [
+              Win98Task(label: 'Paint', active: true, onPressed: () => pressed.add('paint')),
+              Win98Task(label: 'Notepad', onPressed: () => pressed.add('notepad')),
+            ],
+            tray: const Text('12:00'),
+          ),
+        ),
+        size: const Size(400, 300),
+      );
+      await tester.tap(find.text('Notepad'));
+      expect(pressed, ['notepad']);
+      await tester.tap(find.text('Start'));
+      await tester.pump();
+      final item = tester.getRect(find.text('Shut Down...'));
+      expect(item.bottom, lessThan(tester.getRect(find.text('Start')).top), reason: 'opens upward');
+      await tester.tap(find.text('Shut Down...'));
+      await tester.pump();
+      expect(shutDown, 1);
+      expect(find.text('Shut Down...'), findsNothing);
+      expect(find.text('12:00'), findsOneWidget);
+    });
+  });
 }
