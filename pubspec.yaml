@@ -1,7 +1,19 @@
 name: win98_ui
-description: "A Windows 98 look-and-feel widget kit for Flutter: bevels, buttons, windows, menus, tabs, sliders, dialogs and more. Depends only on flutter/widgets."
+description: "A Windows 98 look-and-feel widget kit for Flutter: windows, menus, toolbars, tabs, lists, trees, dialogs, a taskbar and more. No Material or Cupertino."
 version: 0.1.0
-publish_to: none
+repository: https://github.com/allmonty/flutter-win98-ui
+issue_tracker: https://github.com/allmonty/flutter-win98-ui/issues
+topics: [ui, widget, retro, windows, theme]
+
+screenshots:
+  - description: A window with a menu bar, toolbar, tabs, controls, a status bar and a taskbar.
+    path: doc/screenshots/hero.png
+  - description: Menus with a submenu, checkmark and disabled item.
+    path: doc/screenshots/menus.png
+  - description: An Explorer-style tree view and a list view with sortable columns.
+    path: doc/screenshots/explorer.png
+  - description: Text fields, a drop-down, a slider and a list box.
+    path: doc/screenshots/inputs.png
 
 environment:
   sdk: ^3.11.1

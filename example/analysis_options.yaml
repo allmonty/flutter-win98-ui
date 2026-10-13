@@ -3,3 +3,6 @@ include: package:flutter_lints/flutter.yaml
 # Shared by every Dart package in this repo, so `dart format .` is stable.
 formatter:
   page_width: 100
+analyzer:
+  exclude:
+    - build/**

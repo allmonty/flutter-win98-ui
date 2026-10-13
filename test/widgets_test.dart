@@ -1,6 +1,8 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:win98_ui/src/tab_label_cache.dart';
 import 'package:win98_ui/win98_ui.dart';
 
 import 'harness.dart';
@@ -39,6 +41,46 @@ void main() {
       expect(data.desktop, const Color(0xFF123456));
       expect(style.fontSize, 20);
       expect(style.fontFamily, 'packages/win98_ui/PixelifySans');
+    });
+
+    test('copyWith replaces every field and equality follows the fields', () {
+      const base = Win98ThemeData();
+      const c = Color(0xFF123456);
+      final changed = [
+        base.copyWith(face: c),
+        base.copyWith(highlight: c),
+        base.copyWith(light: c),
+        base.copyWith(shadow: c),
+        base.copyWith(darkShadow: c),
+        base.copyWith(window: c),
+        base.copyWith(text: c),
+        base.copyWith(disabledText: c),
+        base.copyWith(selection: c),
+        base.copyWith(selectionText: c),
+        base.copyWith(desktop: c),
+        base.copyWith(activeTitleStart: c),
+        base.copyWith(activeTitleEnd: c),
+        base.copyWith(inactiveTitleStart: c),
+        base.copyWith(inactiveTitleEnd: c),
+        base.copyWith(titleText: c),
+        base.copyWith(tooltip: c),
+        base.copyWith(fontFamily: 'Other'),
+        base.copyWith(fontPackage: 'other'),
+        base.copyWith(fontSize: 1),
+        base.copyWith(controlHeight: 1),
+        base.copyWith(titleBarHeight: 1),
+        base.copyWith(scrollbarSize: 1),
+      ];
+      for (final theme in changed) {
+        expect(theme, isNot(base));
+      }
+      expect(base.copyWith(), base);
+      expect(base.copyWith().hashCode, base.hashCode);
+    });
+
+    test('a new font family drops the bundled font package', () {
+      expect(const Win98ThemeData().copyWith(fontFamily: 'Mine').fontPackage, isNull);
+      expect(const Win98ThemeData().copyWith(fontFamily: 'X', fontPackage: 'p').fontPackage, 'p');
     });
   });
 
@@ -406,7 +448,14 @@ void main() {
       await tester.pump();
       // The panel doesn't grow past maxHeight (plus its own bevel chrome,
       // a few pixels of border/padding around the capped content)...
-      final panel = tester.getRect(find.byType(Win98MenuPanel));
+      final panel = tester.getRect(
+        find
+            .ancestor(
+              of: find.text('Preset 0'),
+              matching: find.byWidgetPredicate((w) => w is Bevel && w.style == BevelStyle.window),
+            )
+            .first,
+      );
       expect(panel.height, lessThanOrEqualTo(140));
       // ...so the scrollable content lays out past the visible panel (it's
       // there, just off-screen until scrolled to), reachable via a
@@ -414,6 +463,90 @@ void main() {
       expect(find.text('Preset 0'), findsOneWidget);
       expect(tester.getRect(find.text('Preset 29')).top, greaterThan(panel.bottom));
       expect(find.byType(Win98Scrollbar), findsOneWidget);
+    });
+  });
+
+  group('Win98MenuBar submenus and keyboard', () {
+    Widget bar(List<String> log) => Win98MenuBar(
+      menus: [
+        Win98Menu(
+          label: 'File',
+          items: [
+            Win98MenuItem(label: 'New', onSelected: () => log.add('new')),
+            const Win98MenuItem(label: 'Disabled'),
+            Win98MenuItem(
+              label: 'Export',
+              children: [
+                Win98MenuItem(label: 'PNG', onSelected: () => log.add('png')),
+                Win98MenuItem(label: 'GIF', onSelected: () => log.add('gif')),
+              ],
+            ),
+          ],
+        ),
+        Win98Menu(
+          label: 'Help',
+          items: [Win98MenuItem(label: 'About', onSelected: () => log.add('about'))],
+        ),
+      ],
+    );
+
+    testWidgets('a submenu opens on tap and its item closes every menu', (tester) async {
+      final log = <String>[];
+      await tester.pumpHarness(bar(log), size: const Size(360, 400));
+      await tester.tap(find.text('File'));
+      await tester.pump();
+      expect(find.text('PNG'), findsNothing);
+      await tester.tap(find.text('Export'));
+      await tester.pump();
+      expect(find.text('PNG'), findsOneWidget);
+      // The submenu opens beside its item, not over it.
+      expect(
+        tester.getRect(find.text('PNG')).left,
+        greaterThan(tester.getRect(find.text('Export')).right),
+      );
+      await tester.tap(find.text('GIF'));
+      await tester.pump();
+      expect(log, ['gif']);
+      expect(find.text('New'), findsNothing);
+      expect(find.text('GIF'), findsNothing);
+    });
+
+    testWidgets('arrow keys move, open submenus and switch menus', (tester) async {
+      final log = <String>[];
+      await tester.pumpHarness(bar(log), size: const Size(360, 400));
+      await tester.tap(find.text('File'));
+      await tester.pump();
+      await tester.pump();
+      // Down lands on New, Down again skips the disabled item to Export.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('PNG'), findsOneWidget);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pump();
+      expect(find.text('PNG'), findsNothing, reason: 'Left closes the submenu');
+      expect(find.text('New'), findsOneWidget, reason: '...but not its parent');
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+      expect(log, ['png']);
+      expect(find.text('New'), findsNothing);
+
+      await tester.tap(find.text('File'));
+      await tester.pump();
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('About'), findsOneWidget, reason: 'Left on File wraps to Help');
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pump();
+      expect(find.text('About'), findsNothing);
     });
   });
 
@@ -459,6 +592,25 @@ void main() {
       expect(find.text('Page 2'), findsOneWidget);
       expect(find.text('Page 1'), findsNothing);
       expect(changes, [1]);
+    });
+
+    testWidgets('a controlled index only changes when the parent rebuilds', (tester) async {
+      final changes = <int>[];
+      Widget view(int index) => Win98TabView(
+        index: index,
+        onChanged: changes.add,
+        tabs: [
+          Win98Tab(label: 'One', builder: (_) => const Text('Page 1')),
+          Win98Tab(label: 'Two', builder: (_) => const Text('Page 2')),
+        ],
+      );
+      await tester.pumpHarness(view(0), size: const Size(360, 200));
+      await tester.tap(find.text('Two'));
+      await tester.pump();
+      expect(changes, [1]);
+      expect(find.text('Page 1'), findsOneWidget, reason: 'parent has not switched yet');
+      await tester.pumpHarness(view(1), size: const Size(360, 200));
+      expect(find.text('Page 2'), findsOneWidget);
     });
   });
 
@@ -571,6 +723,57 @@ void main() {
       await tester.testTextInput.receiveAction(TextInputAction.done);
       expect(controller.text, 'hello');
       expect(submitted, 'hello');
+    });
+
+    testWidgets('passes obscureText, readOnly and maxLines to EditableText', (tester) async {
+      final controller = TextEditingController(text: 'secret');
+      addTearDown(controller.dispose);
+      await tester.pumpHarness(Win98TextField(controller: controller, obscureText: true));
+      expect(tester.widget<EditableText>(find.byType(EditableText)).obscureText, isTrue);
+      await tester.pumpHarness(Win98TextField(controller: controller, readOnly: true));
+      expect(tester.widget<EditableText>(find.byType(EditableText)).readOnly, isTrue);
+      await tester.pumpHarness(Win98TextField(controller: controller, maxLines: 4));
+      final editable = tester.widget<EditableText>(find.byType(EditableText));
+      expect(editable.maxLines, 4);
+      expect(editable.keyboardType, TextInputType.multiline);
+    });
+
+    testWidgets('a multi-line field shows a scrollbar once the text overflows', (tester) async {
+      final controller = TextEditingController(text: List.filled(12, 'line').join('\n'));
+      addTearDown(controller.dispose);
+      await tester.pumpHarness(Win98TextField(controller: controller, maxLines: 3));
+      await tester.pump();
+      final bar = find.descendant(
+        of: find.byType(Win98Scrollbar),
+        matching: find.byType(Win98Button),
+      );
+      expect(bar, findsWidgets, reason: 'arrow buttons appear when content overflows');
+    });
+
+    testWidgets('a disabled field cannot take focus or be edited', (tester) async {
+      final controller = TextEditingController(text: 'fixed');
+      addTearDown(controller.dispose);
+      await tester.pumpHarness(Win98TextField(controller: controller, enabled: false));
+      await tester.tap(find.byType(Win98TextField));
+      await tester.pump();
+      final editable = tester.widget<EditableText>(find.byType(EditableText));
+      expect(editable.focusNode.hasFocus, isFalse);
+      expect(editable.readOnly, isTrue);
+    });
+
+    testWidgets('maxLength runs after the given input formatters', (tester) async {
+      final controller = TextEditingController();
+      addTearDown(controller.dispose);
+      await tester.pumpHarness(
+        Win98TextField(
+          controller: controller,
+          maxLength: 3,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        ),
+      );
+      await tester.tap(find.byType(Win98TextField));
+      await tester.enterText(find.byType(EditableText), 'a1b2c3d4');
+      expect(controller.text, '123');
     });
   });
 
@@ -698,6 +901,251 @@ void main() {
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
       expect(await result, isNull);
+    });
+  });
+
+  group('Win98Tooltip', () {
+    testWidgets('shows after the pointer rests, hides when it leaves', (tester) async {
+      await tester.pumpHarness(
+        const Center(
+          child: Win98Tooltip(message: 'Save the file', child: Text('Save')),
+        ),
+      );
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      addTearDown(mouse.removePointer);
+      await mouse.addPointer(location: Offset.zero);
+      await mouse.moveTo(tester.getCenter(find.text('Save')));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('Save the file'), findsNothing);
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('Save the file'), findsOneWidget);
+      await mouse.moveTo(Offset.zero);
+      await tester.pump();
+      expect(find.text('Save the file'), findsNothing);
+    });
+
+    testWidgets('a long press shows it for showDuration', (tester) async {
+      await tester.pumpHarness(
+        const Center(
+          child: Win98Tooltip(message: 'Save the file', child: Text('Save')),
+        ),
+      );
+      await tester.longPress(find.text('Save'));
+      await tester.pump();
+      expect(find.text('Save the file'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 3));
+      expect(find.text('Save the file'), findsNothing);
+    });
+  });
+
+  group('Win98ToolButton', () {
+    testWidgets('taps, disables and shows the selected state', (tester) async {
+      var taps = 0;
+      await tester.pumpHarness(
+        Win98Toolbar(
+          children: [
+            Win98ToolButton(onPressed: () => taps++, child: const Text('B')),
+            const Win98ToolbarDivider(),
+            const Win98ToolButton(onPressed: null, child: Text('I')),
+            Win98ToolButton(onPressed: () {}, selected: true, child: const Text('U')),
+          ],
+        ),
+      );
+      await tester.tap(find.text('B'));
+      await tester.tap(find.text('I'));
+      expect(taps, 1);
+      final selected = find.ancestor(of: find.text('U'), matching: find.byType(Bevel));
+      expect(tester.widget<Bevel>(selected.first).style, BevelStyle.status);
+      expect(
+        find.ancestor(of: find.text('B'), matching: find.byType(Bevel)),
+        findsNothing,
+        reason: 'flat at rest',
+      );
+    });
+
+    testWidgets('a tooltip wraps the button', (tester) async {
+      await tester.pumpHarness(
+        Win98ToolButton(onPressed: () {}, tooltip: 'Bold', child: const Text('B')),
+      );
+      expect(find.byType(Win98Tooltip), findsOneWidget);
+    });
+  });
+
+  group('Win98ContextMenu', () {
+    testWidgets('opens on right-click and runs the chosen item', (tester) async {
+      var copied = 0;
+      await tester.pumpHarness(
+        Win98ContextMenu(
+          items: [
+            Win98MenuItem(label: 'Copy', onSelected: () => copied++),
+            const Win98MenuItem(label: 'Paste'),
+          ],
+          child: const SizedBox(width: 200, height: 100, child: Text('Canvas')),
+        ),
+      );
+      await tester.tap(find.text('Canvas'), buttons: kSecondaryButton);
+      await tester.pump();
+      expect(find.text('Paste'), findsOneWidget);
+      await tester.tap(find.text('Copy'));
+      await tester.pump();
+      expect(copied, 1);
+      expect(find.text('Paste'), findsNothing);
+    });
+
+    testWidgets('opens on long press and closes on an outside tap', (tester) async {
+      await tester.pumpHarness(
+        Win98ContextMenu(
+          items: [Win98MenuItem(label: 'Copy', onSelected: () {})],
+          child: const SizedBox(width: 200, height: 100, child: Text('Canvas')),
+        ),
+      );
+      await tester.longPress(find.text('Canvas'));
+      await tester.pump();
+      expect(find.text('Copy'), findsOneWidget);
+      await tester.tapAt(const Offset(5, 5));
+      await tester.pump();
+      expect(find.text('Copy'), findsNothing);
+    });
+  });
+
+  group('Win98ListView', () {
+    testWidgets('selects, activates and sorts', (tester) async {
+      final selected = <String>[], activated = <String>[], sorted = <int>[];
+      await tester.pumpHarness(
+        Win98ListView<String>(
+          columns: const [
+            Win98ListColumn(label: 'Name', flex: 2),
+            Win98ListColumn(label: 'Size', width: 80, numeric: true),
+          ],
+          rows: const [
+            Win98ListRow(value: 'a', cells: ['autoexec.bat', '1 KB']),
+            Win98ListRow(value: 'c', cells: ['config.sys', '2 KB']),
+          ],
+          selected: 'a',
+          onSelected: selected.add,
+          onActivated: activated.add,
+          sortColumn: 1,
+          onSort: sorted.add,
+        ),
+      );
+      await tester.tap(find.text('config.sys'));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(selected, ['c']);
+      await tester.tap(find.text('Name'));
+      expect(sorted, [0]);
+      await tester.tap(find.text('autoexec.bat'));
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(find.text('autoexec.bat'));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(activated, ['a']);
+      // Columns line up: a numeric cell is right-aligned under its header.
+      expect(
+        tester.getRect(find.text('2 KB')).right,
+        closeTo(tester.getRect(find.text('Size')).right, 16),
+      );
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('Win98TreeView', () {
+    List<Win98TreeNode<String>> roots() => const [
+      Win98TreeNode(
+        value: 'c',
+        label: 'C:',
+        children: [
+          Win98TreeNode(value: 'win', label: 'WINDOWS'),
+          Win98TreeNode(value: 'dos', label: 'DOS'),
+        ],
+      ),
+      Win98TreeNode(value: 'd', label: 'D:'),
+    ];
+
+    testWidgets('shows children only when expanded', (tester) async {
+      await tester.pumpHarness(
+        Win98TreeView<String>(
+          roots: roots(),
+          expanded: const {},
+          onExpansionChanged: null,
+          selected: null,
+          onSelected: null,
+        ),
+      );
+      expect(find.text('C:'), findsOneWidget);
+      expect(find.text('WINDOWS'), findsNothing);
+      await tester.pumpHarness(
+        Win98TreeView<String>(
+          roots: roots(),
+          expanded: const {'c'},
+          onExpansionChanged: null,
+          selected: null,
+          onSelected: null,
+        ),
+      );
+      expect(find.text('WINDOWS'), findsOneWidget);
+      expect(find.text('DOS'), findsOneWidget);
+    });
+
+    testWidgets('the box toggles, a tap selects, a double-tap toggles', (tester) async {
+      final toggles = <(String, bool)>[], selected = <String>[];
+      await tester.pumpHarness(
+        Win98TreeView<String>(
+          roots: roots(),
+          expanded: const {},
+          onExpansionChanged: (v, open) => toggles.add((v, open)),
+          selected: 'd',
+          onSelected: selected.add,
+        ),
+      );
+      // The [+] box sits left of the label.
+      final label = tester.getRect(find.text('C:'));
+      await tester.tapAt(Offset(label.left - 14, label.center.dy));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(toggles, [('c', true)]);
+      await tester.tap(find.text('C:'));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(selected, ['c']);
+      await tester.tap(find.text('C:'));
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(find.text('C:'));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(toggles.last, ('c', true));
+      expect(toggles, hasLength(2));
+    });
+  });
+
+  group('Win98Taskbar', () {
+    testWidgets('opens the Start menu and presses tasks', (tester) async {
+      var shutDown = 0;
+      final pressed = <String>[];
+      // The taskbar sits at the bottom of the screen, as in a real app.
+      tester.view.physicalSize = const Size(400, 300);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpHarness(
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: Win98Taskbar(
+            startMenu: [Win98MenuItem(label: 'Shut Down...', onSelected: () => shutDown++)],
+            tasks: [
+              Win98Task(label: 'Paint', active: true, onPressed: () => pressed.add('paint')),
+              Win98Task(label: 'Notepad', onPressed: () => pressed.add('notepad')),
+            ],
+            tray: const Text('12:00'),
+          ),
+        ),
+        size: const Size(400, 300),
+      );
+      await tester.tap(find.text('Notepad'));
+      expect(pressed, ['notepad']);
+      await tester.tap(find.text('Start'));
+      await tester.pump();
+      final item = tester.getRect(find.text('Shut Down...'));
+      expect(item.bottom, lessThan(tester.getRect(find.text('Start')).top), reason: 'opens upward');
+      await tester.tap(find.text('Shut Down...'));
+      await tester.pump();
+      expect(shutDown, 1);
+      expect(find.text('Shut Down...'), findsNothing);
+      expect(find.text('12:00'), findsOneWidget);
     });
   });
 }

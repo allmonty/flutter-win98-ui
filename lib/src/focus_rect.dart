@@ -4,9 +4,13 @@ import 'theme.dart';
 
 /// Win98's dotted focus rectangle, drawn just inside the child.
 class FocusRect extends StatelessWidget {
+  /// Draws a focus rectangle around [child], [padding] inside its edge.
   const FocusRect({super.key, required this.child, this.padding = const EdgeInsets.all(1)});
 
+  /// The focused content.
   final Widget child;
+
+  /// Space between the rectangle and [child].
   final EdgeInsets padding;
 
   @override

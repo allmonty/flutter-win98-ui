@@ -7,6 +7,7 @@ import 'theme.dart';
 /// A Win98 trackbar: a sunken groove, a pointed raised thumb, and optional
 /// tick marks. Supports drag, tap-to-jump and arrow keys.
 class Win98Slider extends StatefulWidget {
+  /// A trackbar at [value] between [min] and [max].
   const Win98Slider({
     super.key,
     required this.value,
@@ -20,12 +21,19 @@ class Win98Slider extends StatefulWidget {
     this.semanticFormatter,
   }) : assert(min < max);
 
+  /// The current value, between [min] and [max].
   final double value;
 
   /// `null` disables the slider.
   final ValueChanged<double>? onChanged;
+
+  /// Called once when a drag or key press finishes changing the value.
   final ValueChanged<double>? onChangeEnd;
+
+  /// The value at the left end.
   final double min;
+
+  /// The value at the right end.
   final double max;
 
   /// Number of discrete steps; values snap to them when set.
@@ -33,7 +41,11 @@ class Win98Slider extends StatefulWidget {
 
   /// Draws a tick per division (when there are at most 40).
   final bool showTicks;
+
+  /// Label read by screen readers.
   final String? semanticLabel;
+
+  /// Turns the value into the text screen readers announce.
   final String Function(double value)? semanticFormatter;
 
   @override

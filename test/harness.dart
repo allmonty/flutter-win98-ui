@@ -6,11 +6,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:win98_ui/win98_ui.dart';
 
 /// A minimal WidgetsApp (navigator + overlay) with the Win98 theme.
-Widget harness(Widget child, {Size? size}) {
+Widget harness(Widget child, {Size? size, Win98ThemeData? theme}) {
   return WidgetsApp(
     color: const Color(0xFF008080),
     debugShowCheckedModeBanner: false,
-    builder: (context, navigator) => Win98Theme(child: navigator!),
+    builder: (context, navigator) =>
+        Win98Theme(data: theme ?? const Win98ThemeData(), child: navigator!),
     pageRouteBuilder: <T>(RouteSettings settings, WidgetBuilder builder) =>
         PageRouteBuilder<T>(settings: settings, pageBuilder: (c, _, _) => builder(c)),
     home: Win98Desktop(

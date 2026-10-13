@@ -40,6 +40,7 @@ Future<Color?> showWin98ColorDialog({
 /// The body of [showWin98ColorDialog]: basic-color swatches, R/G/B sliders
 /// and a preview.
 class Win98ColorPicker extends StatefulWidget {
+  /// A color picker starting at [initial].
   const Win98ColorPicker({
     super.key,
     required this.initial,
@@ -48,11 +49,16 @@ class Win98ColorPicker extends StatefulWidget {
     this.cancelLabel = 'Cancel',
   });
 
+  /// The color selected first.
   final Color initial;
 
   /// Called with the chosen color, or `null` for cancel.
   final ValueChanged<Color?> onDone;
+
+  /// Text of the confirm button.
   final String okLabel;
+
+  /// Text of the cancel button.
   final String cancelLabel;
 
   @override

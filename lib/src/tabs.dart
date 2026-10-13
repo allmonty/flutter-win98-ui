@@ -1,40 +1,19 @@
 import 'package:flutter/widgets.dart';
 
 import 'bevel.dart';
+import 'tab_label_cache.dart';
 import 'theme.dart';
 
 /// A page of a [Win98TabView].
 class Win98Tab {
+  /// A tab labeled [label] whose page is built by [builder].
   const Win98Tab({required this.label, required this.builder});
+
+  /// Text on the tab.
   final String label;
+
+  /// Builds the page shown while this tab is selected.
   final WidgetBuilder builder;
-}
-
-/// Caches label text-layout widths per `(label, style, scaler)`, so
-/// [Win98TabView] doesn't re-run text shaping for unchanged labels on every
-/// rebuild — previously the dominant per-rebuild cost of a tab strip with
-/// several labels, since it ran on every rebuild, not just when the tab
-/// selection or available width actually changed.
-class TabLabelWidthCache {
-  final _widths = <(String, TextStyle, TextScaler), double>{};
-
-  /// Number of distinct `(label, style, scaler)` keys cached so far (tests
-  /// only, to assert repeat lookups don't grow the cache).
-  int get widthsForTest => _widths.length;
-
-  double widthOf(String label, TextStyle style, TextScaler scaler) {
-    final key = (label, style, scaler);
-    final cached = _widths[key];
-    if (cached != null) return cached;
-    final painter = TextPainter(
-      text: TextSpan(text: label, style: style),
-      textDirection: TextDirection.ltr,
-      textScaler: scaler,
-    )..layout();
-    final width = painter.width;
-    painter.dispose();
-    return _widths[key] = width;
-  }
 }
 
 /// Property-sheet style tabs over a raised panel. The selected tab is raised
@@ -44,17 +23,31 @@ class TabLabelWidthCache {
 /// Windows 98: every row is stretched to the full width, and the row holding
 /// the selected tab moves down next to the panel.
 class Win98TabView extends StatefulWidget {
+  /// Tabs over a panel showing the selected tab's page.
   const Win98TabView({
     super.key,
     required this.tabs,
+    this.index,
     this.initialIndex = 0,
     this.onChanged,
     this.panelPadding = const EdgeInsets.all(8),
   });
 
+  /// The tabs, left to right.
   final List<Win98Tab> tabs;
+
+  /// The selected tab, when the parent controls the selection: tapping a tab
+  /// then only calls [onChanged], and the parent rebuilds with the new index.
+  /// `null` (the default) lets the view keep its own selection.
+  final int? index;
+
+  /// The tab selected first when [index] is `null`.
   final int initialIndex;
+
+  /// Called with the tapped tab's index when it isn't already selected.
   final ValueChanged<int>? onChanged;
+
+  /// Padding inside the panel, around the page.
   final EdgeInsetsGeometry panelPadding;
 
   @override
@@ -69,8 +62,8 @@ class _Win98TabViewState extends State<Win98TabView> {
   final _widthCache = TabLabelWidthCache();
 
   void _select(int i) {
-    if (i == _index) return;
-    setState(() => _index = i);
+    if (i == (widget.index ?? _index)) return;
+    if (widget.index == null) setState(() => _index = i);
     widget.onChanged?.call(i);
   }
 
@@ -94,7 +87,7 @@ class _Win98TabViewState extends State<Win98TabView> {
   Widget build(BuildContext context) {
     final theme = Win98Theme.of(context);
     final tabHeight = theme.controlHeight;
-    final index = _index.clamp(0, widget.tabs.length - 1);
+    final index = (widget.index ?? _index).clamp(0, widget.tabs.length - 1);
     final scaler = MediaQuery.maybeTextScalerOf(context) ?? TextScaler.noScaling;
 
     return LayoutBuilder(

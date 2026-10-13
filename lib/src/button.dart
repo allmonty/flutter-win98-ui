@@ -7,6 +7,7 @@ import 'theme.dart';
 /// A classic push button: raised at rest, pressed while held, a dotted focus
 /// rectangle when keyboard-focused, and etched text when disabled.
 class Win98Button extends StatefulWidget {
+  /// A push button showing [child].
   const Win98Button({
     super.key,
     required this.onPressed,
@@ -22,19 +23,32 @@ class Win98Button extends StatefulWidget {
 
   /// Called on tap. `null` disables the button.
   final VoidCallback? onPressed;
+
+  /// The label, usually a [Text].
   final Widget child;
 
   /// Draws the extra dark outline of a dialog's default button.
   final bool isDefault;
+
+  /// Padding around [child], inside the bevel.
   final EdgeInsetsGeometry padding;
+
+  /// Minimum width; Win98 dialog buttons share one width.
   final double minWidth;
 
   /// Defaults to the theme's control height.
   final double? minHeight;
+
+  /// Focus node; one is created when `null`.
   final FocusNode? focusNode;
+
+  /// Whether to take focus when first built.
   final bool autofocus;
+
+  /// Label read by screen readers.
   final String? semanticLabel;
 
+  /// Whether [onPressed] is set.
   bool get enabled => onPressed != null;
 
   @override

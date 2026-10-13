@@ -16,8 +16,11 @@ enum BevelStyle {
   /// Sunken fields (text boxes, list boxes, checkboxes).
   field,
 
-  /// A shallow one-line sunken edge (status bar panes).
+  /// A shallow one-line sunken edge (status bar panes, pressed tool buttons).
   status,
+
+  /// A shallow one-line raised edge (tool buttons under the pointer).
+  thinRaised,
 
   /// Group-box frame: a shadow line with a highlight line inside it.
   etched,
@@ -26,17 +29,21 @@ enum BevelStyle {
   outline,
 }
 
-/// Paints a 2-pixel Win98 bevel (1 pixel for [BevelStyle.status]) around a
-/// rectangle.
+/// Paints a 2-pixel Win98 bevel (1 pixel for [BevelStyle.status],
+/// [BevelStyle.thinRaised] and [BevelStyle.outline]) around a rectangle.
 class BevelPainter extends CustomPainter {
+  /// Paints [style] in [theme]'s colors.
   const BevelPainter({required this.style, required this.theme});
 
+  /// Which bevel to paint.
   final BevelStyle style;
+
+  /// Supplies the highlight and shadow colors.
   final Win98ThemeData theme;
 
   /// Width of the border drawn for `style`.
   static double widthOf(BevelStyle style) => switch (style) {
-    BevelStyle.status || BevelStyle.outline => 1,
+    BevelStyle.status || BevelStyle.thinRaised || BevelStyle.outline => 1,
     _ => 2,
   };
 
@@ -58,6 +65,8 @@ class BevelPainter extends CustomPainter {
         _frame(canvas, size, 1, t.darkShadow, t.light);
       case BevelStyle.status:
         _frame(canvas, size, 0, t.shadow, t.highlight);
+      case BevelStyle.thinRaised:
+        _frame(canvas, size, 0, t.highlight, t.shadow);
       case BevelStyle.etched:
         _frame(canvas, size, 0, t.shadow, t.highlight);
         _frame(canvas, size, 1, t.highlight, t.shadow);
@@ -89,6 +98,7 @@ class BevelPainter extends CustomPainter {
 /// A box with a Win98 bevel border, a background color and padding inside
 /// the border.
 class Bevel extends StatelessWidget {
+  /// A box with a [style] border around [child].
   const Bevel({
     super.key,
     this.style = BevelStyle.raised,
@@ -97,6 +107,7 @@ class Bevel extends StatelessWidget {
     this.child,
   });
 
+  /// Which bevel to draw.
   final BevelStyle style;
 
   /// Fill color; defaults to the theme's face color ([BevelStyle.field]
@@ -105,6 +116,8 @@ class Bevel extends StatelessWidget {
 
   /// Extra padding inside the border.
   final EdgeInsetsGeometry padding;
+
+  /// The content inside the border.
   final Widget? child;
 
   @override

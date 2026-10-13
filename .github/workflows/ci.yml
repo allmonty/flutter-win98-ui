@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # macOS, because the goldens (and README screenshots) are macOS references:
+  # text renders slightly differently on Linux.
+  test:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - id: flutter
+        # Same Flutter as local development (.tool-versions, e.g. "flutter 3.47.5-stable").
+        run: echo "version=$(awk '/^flutter/{print $2}' .tool-versions | sed 's/-stable$//')" >> "$GITHUB_OUTPUT"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.flutter.outputs.version }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: dart format --output=none --set-exit-if-changed .
+      - run: flutter test
+      - working-directory: example
+        run: flutter pub get && flutter analyze && flutter test
+      - run: flutter pub publish --dry-run

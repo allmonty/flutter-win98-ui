@@ -11,10 +11,16 @@ import 'theme.dart';
 /// dithered track, draggable raised thumb). The bar is only shown when the
 /// content overflows.
 class Win98ScrollView extends StatefulWidget {
+  /// A scroll view around [child].
   const Win98ScrollView({super.key, required this.child, this.controller, this.padding});
 
+  /// The scrolled content.
   final Widget child;
+
+  /// Scroll controller; one is created when `null`.
   final ScrollController? controller;
+
+  /// Padding inside the scrolled area.
   final EdgeInsetsGeometry? padding;
 
   @override
@@ -69,8 +75,10 @@ class _NoGlowBehavior extends ScrollBehavior {
 /// A vertical scrollbar driving `controller`. Place it next to the
 /// scrollable that uses the same controller.
 class Win98Scrollbar extends StatefulWidget {
+  /// A scrollbar for [controller].
   const Win98Scrollbar({super.key, required this.controller, this.step = 40});
 
+  /// The controller of the scrollable this bar drives.
   final ScrollController controller;
 
   /// Pixels scrolled per arrow tap.

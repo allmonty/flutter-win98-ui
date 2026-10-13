@@ -1,11 +1,12 @@
-import 'dart:math' as math;
-
 import 'package:flutter/widgets.dart';
+
+import 'popup_layout.dart';
 
 /// Anchors a popup (menu, drop-down list) to a widget using an
 /// [OverlayPortal]. The popup opens below the anchor, or above it when there
 /// is more room there, and is kept on screen. Tapping outside closes it.
 class Win98PopupAnchor extends StatefulWidget {
+  /// An anchor built by [builder] whose popup is built by [popupBuilder].
   const Win98PopupAnchor({
     super.key,
     required this.builder,
@@ -22,6 +23,8 @@ class Win98PopupAnchor extends StatefulWidget {
 
   /// Make the popup at least as wide as the anchor (drop-down lists).
   final bool matchWidth;
+
+  /// Called after the popup closes.
   final VoidCallback? onClosed;
 
   @override
@@ -37,10 +40,9 @@ class _Win98PopupAnchorState extends State<Win98PopupAnchor> {
       _close();
       return;
     }
-    final box = context.findRenderObject() as RenderBox?;
-    final overlay = Overlay.maybeOf(context)?.context.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize) return;
-    _anchor = box.localToGlobal(Offset.zero, ancestor: overlay) & box.size;
+    final anchor = overlayRectOf(context);
+    if (anchor == null) return;
+    _anchor = anchor;
     setState(_controller.show);
   }
 
@@ -63,7 +65,7 @@ class _Win98PopupAnchorState extends State<Win98PopupAnchor> {
             ),
             Positioned.fill(
               child: CustomSingleChildLayout(
-                delegate: _PopupLayout(
+                delegate: PopupLayout(
                   anchor: _anchor,
                   matchWidth: widget.matchWidth,
                   safeArea: padding,
@@ -77,45 +79,4 @@ class _Win98PopupAnchorState extends State<Win98PopupAnchor> {
       child: widget.builder(context, _controller.isShowing, _toggle),
     );
   }
-}
-
-class _PopupLayout extends SingleChildLayoutDelegate {
-  _PopupLayout({required this.anchor, required this.matchWidth, required this.safeArea});
-
-  final Rect anchor;
-  final bool matchWidth;
-  final EdgeInsets safeArea;
-
-  static const _margin = 4.0;
-
-  double _below(Size size) => size.height - safeArea.bottom - _margin - anchor.bottom;
-  double _above(Size size) => anchor.top - safeArea.top - _margin;
-
-  @override
-  BoxConstraints getConstraintsForChild(BoxConstraints constraints) {
-    final size = constraints.biggest;
-    final maxWidth = math.max(0.0, size.width - _margin * 2);
-    final maxHeight = math.max(0.0, math.max(_below(size), _above(size)));
-    return BoxConstraints(
-      minWidth: matchWidth ? math.min(anchor.width, maxWidth) : 0,
-      maxWidth: maxWidth,
-      maxHeight: maxHeight,
-    );
-  }
-
-  @override
-  Offset getPositionForChild(Size size, Size childSize) {
-    final fitsBelow = childSize.height <= _below(size);
-    final y = fitsBelow || _below(size) >= _above(size)
-        ? anchor.bottom
-        : anchor.top - childSize.height;
-    final x = anchor.left
-        .clamp(_margin, math.max(_margin, size.width - _margin - childSize.width))
-        .toDouble();
-    return Offset(x, y);
-  }
-
-  @override
-  bool shouldRelayout(_PopupLayout old) =>
-      old.anchor != anchor || old.matchWidth != matchWidth || old.safeArea != safeArea;
 }
