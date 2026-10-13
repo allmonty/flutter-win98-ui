@@ -32,3 +32,4 @@ export 'src/toolbar.dart';
 export 'src/tooltip.dart';
 export 'src/tree_view.dart';
 export 'src/window.dart';
+export 'src/window_stack.dart';

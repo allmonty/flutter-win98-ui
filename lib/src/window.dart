@@ -4,6 +4,7 @@ import 'bevel.dart';
 import 'button.dart';
 import 'glyphs.dart';
 import 'theme.dart';
+import 'window_scope.dart';
 
 /// A window: raised frame, gradient title bar with caption buttons, an
 /// optional menu bar, the body, and an optional status bar.
@@ -111,7 +112,8 @@ class Win98TitleBar extends StatelessWidget {
   /// Small icon before the title.
   final Widget? icon;
 
-  /// Uses the active (blue) or inactive (gray) gradient.
+  /// Uses the active (blue) or inactive (gray) gradient. Inside a
+  /// `Win98WindowStack` the stack decides instead: the front window is active.
   final bool active;
 
   /// Shows a minimize button when set.
@@ -126,6 +128,8 @@ class Win98TitleBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Win98Theme.of(context);
+    final scope = WindowScope.maybeOf(context);
+    final active = scope?.active ?? this.active;
     final size = theme.titleBarHeight - 6;
     Widget caption(List<String> glyph, VoidCallback onTap, String label) => Padding(
       padding: const EdgeInsets.only(left: 2),
@@ -139,7 +143,7 @@ class Win98TitleBar extends StatelessWidget {
       ),
     );
 
-    return Container(
+    final bar = Container(
       height: theme.titleBarHeight,
       padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 3),
       decoration: BoxDecoration(
@@ -168,6 +172,13 @@ class Win98TitleBar extends StatelessWidget {
           ],
         ],
       ),
+    );
+    if (scope == null) return bar;
+    // In a window stack, dragging the title bar moves the window.
+    return GestureDetector(
+      onPanStart: (_) => scope.onDragStart(),
+      onPanUpdate: (d) => scope.onDrag(d.delta),
+      child: bar,
     );
   }
 }

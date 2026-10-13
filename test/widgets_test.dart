@@ -1226,4 +1226,99 @@ void main() {
       expect(tester.widget<EditableText>(find.byType(EditableText)).readOnly, isTrue);
     });
   });
+
+  group('Win98WindowStack', () {
+    Win98StackWindow window(String id, Offset at, {Widget? body}) => Win98StackWindow(
+      id: id,
+      position: at,
+      size: const Size(160, 100),
+      child: Win98Window(title: id, expand: true, child: body ?? const SizedBox()),
+    );
+
+    Color titleColor(WidgetTester tester, String title) {
+      final bar = find.ancestor(of: find.text(title), matching: find.byType(Container)).first;
+      final gradient = (tester.widget<Container>(bar).decoration! as BoxDecoration).gradient!;
+      return (gradient as LinearGradient).colors.first;
+    }
+
+    testWidgets('dragging the title bar moves the window', (tester) async {
+      await tester.pumpHarness(
+        Win98WindowStack(windows: [window('Paint', const Offset(10, 10))]),
+        size: const Size(400, 300),
+      );
+      final before = tester.getTopLeft(find.byType(Win98Window));
+      await tester.drag(find.text('Paint'), const Offset(50, 30));
+      await tester.pump();
+      expect(tester.getTopLeft(find.byType(Win98Window)) - before, const Offset(50, 30));
+    });
+
+    testWidgets('a window stays grabbable when dragged off screen', (tester) async {
+      await tester.pumpHarness(
+        Win98WindowStack(windows: [window('Paint', const Offset(10, 10))]),
+        size: const Size(400, 300),
+      );
+      final stack = tester.getRect(find.byType(Win98WindowStack));
+      await tester.drag(find.text('Paint'), const Offset(-1000, -1000));
+      await tester.pump();
+      final rect = tester.getRect(find.byType(Win98Window));
+      expect(rect.top, stack.top, reason: 'the title bar never goes above the top');
+      expect(rect.right, stack.left + 40, reason: 'a 40-pixel strip stays on screen');
+    });
+
+    testWidgets('tapping a back window brings it to the front', (tester) async {
+      final activated = <Object>[];
+      await tester.pumpHarness(
+        Win98WindowStack(
+          onActivated: activated.add,
+          windows: [window('Back', const Offset(0, 0)), window('Front', const Offset(60, 40))],
+        ),
+        size: const Size(400, 300),
+      );
+      const theme = Win98ThemeData();
+      expect(titleColor(tester, 'Front'), theme.activeTitleStart);
+      expect(titleColor(tester, 'Back'), theme.inactiveTitleStart);
+      await tester.tapAt(tester.getTopLeft(find.text('Back')) + const Offset(2, 2));
+      await tester.pump();
+      expect(activated, ['Back']);
+      expect(titleColor(tester, 'Back'), theme.activeTitleStart);
+      expect(titleColor(tester, 'Front'), theme.inactiveTitleStart);
+    });
+
+    testWidgets('bringToFront keeps each window state', (tester) async {
+      final key = GlobalKey<Win98WindowStackState>();
+      final text = TextEditingController(text: 'typed');
+      addTearDown(text.dispose);
+      await tester.pumpHarness(
+        Win98WindowStack(
+          key: key,
+          windows: [
+            window('Notes', const Offset(0, 0), body: Win98TextField(controller: text)),
+            window('Paint', const Offset(60, 40), body: const _Counter()),
+          ],
+        ),
+        size: const Size(400, 300),
+      );
+      await tester.tap(find.text('count 0'));
+      await tester.pump();
+      key.currentState!.bringToFront('Notes');
+      await tester.pump();
+      expect(key.currentState!.activeId, 'Notes');
+      expect(find.text('count 1'), findsOneWidget, reason: 'Paint kept its state');
+    });
+  });
+}
+
+class _Counter extends StatefulWidget {
+  const _Counter();
+
+  @override
+  State<_Counter> createState() => _CounterState();
+}
+
+class _CounterState extends State<_Counter> {
+  int _n = 0;
+
+  @override
+  Widget build(BuildContext context) =>
+      GestureDetector(onTap: () => setState(() => _n++), child: Text('count $_n'));
 }
