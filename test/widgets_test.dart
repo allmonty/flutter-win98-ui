@@ -1170,4 +1170,60 @@ void main() {
       expect(find.text('12:00'), findsOneWidget);
     });
   });
+
+  group('Win98SpinBox', () {
+    Widget spin(int value, List<int> log, {int min = 0, int max = 10}) =>
+        Win98SpinBox(value: value, min: min, max: max, onChanged: log.add);
+
+    testWidgets('arrow buttons step and clamp', (tester) async {
+      final log = <int>[];
+      await tester.pumpHarness(spin(10, log));
+      await tester.tap(find.bySemanticsLabel('Increase'));
+      await tester.tap(find.bySemanticsLabel('Decrease'));
+      expect(log, [9], reason: 'already at max, then one down');
+    });
+
+    testWidgets('typing commits once, clamped; empty text restores', (tester) async {
+      final log = <int>[];
+      await tester.pumpHarness(spin(3, log));
+      await tester.tap(find.byType(EditableText));
+      await tester.enterText(find.byType(EditableText), '42');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pump();
+      expect(log, [10]);
+      expect(find.text('10'), findsOneWidget);
+      await tester.enterText(find.byType(EditableText), '');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pump();
+      expect(find.text('10'), findsOneWidget, reason: 'empty text restores the last value');
+      expect(log, [10], reason: 'restoring reports nothing new');
+    });
+
+    testWidgets('Up and Down keys step while focused', (tester) async {
+      final log = <int>[];
+      await tester.pumpHarness(spin(5, log));
+      await tester.tap(find.byType(EditableText));
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      expect(log, [6, 5, 4]);
+    });
+
+    testWidgets('only digits (and a minus when min < 0) can be typed', (tester) async {
+      final log = <int>[];
+      await tester.pumpHarness(spin(0, log, min: -5));
+      await tester.tap(find.byType(EditableText));
+      await tester.enterText(find.byType(EditableText), '-3x');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pump();
+      expect(log, [-3]);
+    });
+
+    testWidgets('disabled without onChanged', (tester) async {
+      await tester.pumpHarness(const Win98SpinBox(value: 1, onChanged: null));
+      expect(tester.widget<Win98Button>(find.byType(Win98Button).first).enabled, isFalse);
+      expect(tester.widget<EditableText>(find.byType(EditableText)).readOnly, isTrue);
+    });
+  });
 }

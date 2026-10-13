@@ -21,6 +21,7 @@ export 'src/popup.dart';
 export 'src/progress.dart';
 export 'src/scroll.dart';
 export 'src/slider.dart';
+export 'src/spin_box.dart';
 export 'src/status_bar.dart';
 export 'src/tabs.dart';
 export 'src/taskbar.dart';
