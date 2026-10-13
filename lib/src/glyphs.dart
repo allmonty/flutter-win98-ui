@@ -5,9 +5,13 @@ import 'package:flutter/widgets.dart';
 /// Win98's arrows, checkmarks and caption-button symbols were tiny bitmaps;
 /// drawing them the same way keeps them crisp at any scale.
 class PixelGlyph extends StatelessWidget {
+  /// A glyph drawn from [pattern].
   const PixelGlyph(this.pattern, {super.key, this.color, this.pixelSize = 2});
 
+  /// Rows of the bitmap; `#` is a lit pixel, anything else is clear.
   final List<String> pattern;
+
+  /// Pixel color; defaults to the ambient text color.
   final Color? color;
 
   /// Logical size of one glyph pixel.
@@ -51,6 +55,7 @@ class _PixelGlyphPainter extends CustomPainter {
 
 /// The stock glyph bitmaps.
 abstract final class Win98Glyphs {
+  /// The close (×) caption button.
   static const close = [
     '##....##',
     '.##..##.',
@@ -60,6 +65,8 @@ abstract final class Win98Glyphs {
     '.##..##.',
     '##....##',
   ];
+
+  /// The minimize caption button.
   static const minimize = [
     '........',
     '........',
@@ -69,6 +76,8 @@ abstract final class Win98Glyphs {
     '######..',
     '######..',
   ];
+
+  /// The maximize caption button.
   static const maximize = [
     '#########',
     '#########',
@@ -78,10 +87,20 @@ abstract final class Win98Glyphs {
     '#.......#',
     '#########',
   ];
+
+  /// Down arrow (drop-downs, scrollbars, descending sort).
   static const arrowDown = ['#######', '.#####.', '..###..', '...#...'];
+
+  /// Up arrow (scrollbars, ascending sort).
   static const arrowUp = ['...#...', '..###..', '.#####.', '#######'];
+
+  /// Right arrow (submenus, "next" buttons).
   static const arrowRight = ['#...', '##..', '###.', '####', '###.', '##..', '#...'];
+
+  /// Left arrow ("previous" buttons).
   static const arrowLeft = ['...#', '..##', '.###', '####', '.###', '..##', '...#'];
+
+  /// Checkmark (checkboxes, checked menu items).
   static const check = [
     '......#',
     '.....##',
@@ -91,5 +110,7 @@ abstract final class Win98Glyphs {
     '.###...',
     '..#....',
   ];
+
+  /// Round dot (selected radio buttons).
   static const dot = ['.##.', '####', '####', '.##.'];
 }

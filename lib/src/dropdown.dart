@@ -8,8 +8,13 @@ import 'theme.dart';
 
 /// An option of a [Win98Dropdown].
 class Win98DropdownItem<T> {
+  /// An option for [value] shown as [label].
   const Win98DropdownItem({required this.value, required this.label});
+
+  /// The value reported when the option is chosen.
   final T value;
+
+  /// The option's text.
   final String label;
 }
 
@@ -17,6 +22,7 @@ class Win98DropdownItem<T> {
 /// button, a pop-up list, and Previous/Next buttons to step through
 /// [items] without opening the list.
 class Win98Dropdown<T> extends StatelessWidget {
+  /// A drop-down showing [value]'s label.
   const Win98Dropdown({
     super.key,
     required this.items,
@@ -26,12 +32,19 @@ class Win98Dropdown<T> extends StatelessWidget {
     this.semanticLabel,
   });
 
+  /// The options, in list order.
   final List<Win98DropdownItem<T>> items;
+
+  /// The selected option's value, or `null` for none.
   final T? value;
 
   /// `null` disables the drop-down.
   final ValueChanged<T>? onChanged;
+
+  /// Maximum height of the open list before it scrolls.
   final double maxListHeight;
+
+  /// Label read by screen readers.
   final String? semanticLabel;
 
   String get _label {

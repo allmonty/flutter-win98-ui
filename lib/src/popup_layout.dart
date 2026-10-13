@@ -8,6 +8,7 @@ import 'package:flutter/widgets.dart';
 /// screen: below the anchor, or above it when there is more room there; with
 /// [side], to the right of it, or to the left when it doesn't fit.
 class PopupLayout extends SingleChildLayoutDelegate {
+  /// Lays a popup out against [anchor].
   PopupLayout({
     required this.anchor,
     required this.safeArea,
@@ -15,9 +16,16 @@ class PopupLayout extends SingleChildLayoutDelegate {
     this.side = false,
   });
 
+  /// The anchor's bounds in overlay coordinates.
   final Rect anchor;
+
+  /// Makes the popup at least as wide as [anchor].
   final bool matchWidth;
+
+  /// Insets (notches, system bars) the popup must stay clear of.
   final EdgeInsets safeArea;
+
+  /// Places the popup beside [anchor] (submenus) instead of below it.
   final bool side;
 
   static const _margin = 4.0;

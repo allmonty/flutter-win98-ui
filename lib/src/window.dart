@@ -8,6 +8,7 @@ import 'theme.dart';
 /// A window: raised frame, gradient title bar with caption buttons, an
 /// optional menu bar, the body, and an optional status bar.
 class Win98Window extends StatelessWidget {
+  /// A window titled [title] around [child].
   const Win98Window({
     super.key,
     required this.title,
@@ -24,24 +25,41 @@ class Win98Window extends StatelessWidget {
     this.expand = false,
   });
 
+  /// Text in the title bar.
   final String title;
+
+  /// Small icon before the title.
   final Widget? icon;
+
+  /// Draws the title bar in the active (blue) or inactive (gray) colors.
   final bool active;
+
+  /// Shown under the title bar, usually a `Win98MenuBar`.
   final Widget? menuBar;
 
   /// Shown under [menuBar], usually a `Win98Toolbar`.
   final Widget? toolbar;
+
+  /// Shown at the bottom, usually a `Win98StatusBar`.
   final Widget? statusBar;
 
   /// Caption buttons are shown only for non-null callbacks.
   final VoidCallback? onMinimize;
+
+  /// Shows a maximize button when set.
   final VoidCallback? onMaximize;
+
+  /// Shows a close button when set.
   final VoidCallback? onClose;
+
+  /// Padding around [child].
   final EdgeInsetsGeometry bodyPadding;
 
   /// Fill the available height, pinning the status bar to the bottom (for
   /// a maximized main window). Dialogs leave this off to size to content.
   final bool expand;
+
+  /// The window's content.
   final Widget child;
 
   @override
@@ -76,6 +94,7 @@ class Win98Window extends StatelessWidget {
 
 /// The gradient title bar of a [Win98Window].
 class Win98TitleBar extends StatelessWidget {
+  /// A title bar for [title] with caption buttons for the set callbacks.
   const Win98TitleBar({
     super.key,
     required this.title,
@@ -86,11 +105,22 @@ class Win98TitleBar extends StatelessWidget {
     this.onClose,
   });
 
+  /// The title text.
   final String title;
+
+  /// Small icon before the title.
   final Widget? icon;
+
+  /// Uses the active (blue) or inactive (gray) gradient.
   final bool active;
+
+  /// Shows a minimize button when set.
   final VoidCallback? onMinimize;
+
+  /// Shows a maximize button when set.
   final VoidCallback? onMaximize;
+
+  /// Shows a close button when set.
   final VoidCallback? onClose;
 
   @override
@@ -144,7 +174,10 @@ class Win98TitleBar extends StatelessWidget {
 
 /// A teal desktop background.
 class Win98Desktop extends StatelessWidget {
+  /// A desktop behind [child].
   const Win98Desktop({super.key, required this.child});
+
+  /// Usually windows, or a column with a `Win98Taskbar` at the bottom.
   final Widget child;
 
   @override

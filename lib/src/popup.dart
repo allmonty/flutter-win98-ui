@@ -6,6 +6,7 @@ import 'popup_layout.dart';
 /// [OverlayPortal]. The popup opens below the anchor, or above it when there
 /// is more room there, and is kept on screen. Tapping outside closes it.
 class Win98PopupAnchor extends StatefulWidget {
+  /// An anchor built by [builder] whose popup is built by [popupBuilder].
   const Win98PopupAnchor({
     super.key,
     required this.builder,
@@ -22,6 +23,8 @@ class Win98PopupAnchor extends StatefulWidget {
 
   /// Make the popup at least as wide as the anchor (drop-down lists).
   final bool matchWidth;
+
+  /// Called after the popup closes.
   final VoidCallback? onClosed;
 
   @override

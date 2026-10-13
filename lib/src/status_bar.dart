@@ -4,7 +4,10 @@ import 'bevel.dart';
 
 /// One pane of a [Win98StatusBar].
 class Win98StatusPane {
+  /// A pane showing [child], sized by [flex].
   const Win98StatusPane(this.child, {this.flex = 1});
+
+  /// The pane's content, usually a [Text].
   final Widget child;
 
   /// Relative width; `0` sizes the pane to its content (capped so the
@@ -14,8 +17,10 @@ class Win98StatusPane {
 
 /// A row of shallow sunken panes along the bottom of a window.
 class Win98StatusBar extends StatelessWidget {
+  /// A status bar of [panes], left to right.
   const Win98StatusBar({super.key, required this.panes});
 
+  /// The panes.
   final List<Win98StatusPane> panes;
 
   /// Width always left for the flexible panes.

@@ -32,9 +32,13 @@ enum BevelStyle {
 /// Paints a 2-pixel Win98 bevel (1 pixel for [BevelStyle.status],
 /// [BevelStyle.thinRaised] and [BevelStyle.outline]) around a rectangle.
 class BevelPainter extends CustomPainter {
+  /// Paints [style] in [theme]'s colors.
   const BevelPainter({required this.style, required this.theme});
 
+  /// Which bevel to paint.
   final BevelStyle style;
+
+  /// Supplies the highlight and shadow colors.
   final Win98ThemeData theme;
 
   /// Width of the border drawn for `style`.
@@ -94,6 +98,7 @@ class BevelPainter extends CustomPainter {
 /// A box with a Win98 bevel border, a background color and padding inside
 /// the border.
 class Bevel extends StatelessWidget {
+  /// A box with a [style] border around [child].
   const Bevel({
     super.key,
     this.style = BevelStyle.raised,
@@ -102,6 +107,7 @@ class Bevel extends StatelessWidget {
     this.child,
   });
 
+  /// Which bevel to draw.
   final BevelStyle style;
 
   /// Fill color; defaults to the theme's face color ([BevelStyle.field]
@@ -110,6 +116,8 @@ class Bevel extends StatelessWidget {
 
   /// Extra padding inside the border.
   final EdgeInsetsGeometry padding;
+
+  /// The content inside the border.
   final Widget? child;
 
   @override

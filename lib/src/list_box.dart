@@ -6,14 +6,22 @@ import 'theme.dart';
 
 /// One row of a [Win98ListBox].
 class Win98ListItem<T> {
+  /// A row for [value] showing [label].
   const Win98ListItem({required this.value, required this.label, this.leading});
+
+  /// The value reported when the row is selected or activated.
   final T value;
+
+  /// The row's text.
   final String label;
+
+  /// Shown before the label, e.g. a small icon.
   final Widget? leading;
 }
 
 /// A sunken white list with a navy selection highlight.
 class Win98ListBox<T> extends StatelessWidget {
+  /// A list of [items] with [selected] highlighted.
   const Win98ListBox({
     super.key,
     required this.items,
@@ -23,8 +31,13 @@ class Win98ListBox<T> extends StatelessWidget {
     this.height = 160,
   });
 
+  /// The rows, top to bottom.
   final List<Win98ListItem<T>> items;
+
+  /// The selected row's value, or `null` for none.
   final T? selected;
+
+  /// Called with a tapped row's value.
   final ValueChanged<T>? onSelected;
 
   /// Double-tap on a row (Win98's "open").

@@ -6,10 +6,13 @@ import 'theme.dart';
 /// A sunken progress bar filled with chunky blocks. `value == null` shows an
 /// indeterminate marquee.
 class Win98ProgressBar extends StatefulWidget {
+  /// A progress bar at [value], or a marquee when [value] is `null`.
   const Win98ProgressBar({super.key, this.value, this.height = 22});
 
   /// Progress in [0, 1], or `null` for indeterminate.
   final double? value;
+
+  /// Height in logical pixels.
   final double height;
 
   @override

@@ -5,6 +5,7 @@ import 'theme.dart';
 
 /// An etched frame with a caption set into its top edge.
 class Win98GroupBox extends StatelessWidget {
+  /// A frame captioned [label] around [child].
   const Win98GroupBox({
     super.key,
     required this.label,
@@ -12,8 +13,13 @@ class Win98GroupBox extends StatelessWidget {
     this.padding = const EdgeInsets.fromLTRB(8, 14, 8, 8),
   });
 
+  /// The caption on the top edge.
   final String label;
+
+  /// The framed content.
   final Widget child;
+
+  /// Padding inside the frame.
   final EdgeInsetsGeometry padding;
 
   @override

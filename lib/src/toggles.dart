@@ -76,12 +76,16 @@ class _LabeledToggleState extends State<_LabeledToggle> {
 
 /// A sunken square checkbox with an optional label.
 class Win98Checkbox extends StatelessWidget {
+  /// A checkbox showing [value], optionally labeled.
   const Win98Checkbox({super.key, required this.value, required this.onChanged, this.label});
 
+  /// Whether the box is checked.
   final bool value;
 
   /// `null` disables the checkbox.
   final ValueChanged<bool>? onChanged;
+
+  /// Text beside the box; tapping it toggles too.
   final String? label;
 
   @override
@@ -116,6 +120,7 @@ class Win98Checkbox extends StatelessWidget {
 
 /// A round radio button for one value of a group.
 class Win98Radio<T> extends StatelessWidget {
+  /// A radio button for [value], selected when it equals [groupValue].
   const Win98Radio({
     super.key,
     required this.value,
@@ -124,13 +129,19 @@ class Win98Radio<T> extends StatelessWidget {
     this.label,
   });
 
+  /// The value this button selects.
   final T value;
+
+  /// The group's selected value.
   final T? groupValue;
 
   /// `null` disables the radio button.
   final ValueChanged<T>? onChanged;
+
+  /// Text beside the button; tapping it selects too.
   final String? label;
 
+  /// Whether [value] is the group's selected value.
   bool get selected => value == groupValue;
 
   @override

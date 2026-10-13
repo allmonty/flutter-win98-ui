@@ -14,6 +14,7 @@ class TabLabelWidthCache {
   /// only, to assert repeat lookups don't grow the cache).
   int get widthsForTest => _widths.length;
 
+  /// The laid-out width of [label] in [style] at [scaler].
   double widthOf(String label, TextStyle style, TextScaler scaler) {
     final key = (label, style, scaler);
     final cached = _widths[key];

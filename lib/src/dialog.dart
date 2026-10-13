@@ -44,7 +44,10 @@ Future<T?> showWin98Dialog<T>({
 
 /// A right-aligned row of dialog buttons.
 class Win98DialogButtons extends StatelessWidget {
+  /// A row of [children], usually [Win98Button]s.
   const Win98DialogButtons({super.key, required this.children});
+
+  /// The buttons, left to right.
   final List<Widget> children;
 
   @override
@@ -56,12 +59,30 @@ class Win98DialogButtons extends StatelessWidget {
   }
 }
 
-enum Win98MessageIconType { info, warning, error, question }
+/// The icon of a message box.
+enum Win98MessageIconType {
+  /// A blue "i".
+  info,
+
+  /// A yellow triangle with "!".
+  warning,
+
+  /// A red circle with "×".
+  error,
+
+  /// A blue "?".
+  question,
+}
 
 /// The classic message-box icons, painted.
 class Win98MessageIcon extends StatelessWidget {
+  /// A [type] icon, [size] pixels across.
   const Win98MessageIcon(this.type, {super.key, this.size = 32});
+
+  /// Which icon to draw.
   final Win98MessageIconType type;
+
+  /// Width and height in logical pixels.
   final double size;
 
   @override
