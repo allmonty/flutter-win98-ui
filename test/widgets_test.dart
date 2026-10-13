@@ -1306,6 +1306,46 @@ void main() {
       expect(find.text('count 1'), findsOneWidget, reason: 'Paint kept its state');
     });
   });
+
+  group('Win98DesktopIcon', () {
+    testWidgets('tap selects, double-tap opens', (tester) async {
+      final log = <String>[];
+      await tester.pumpHarness(
+        Align(
+          alignment: Alignment.topLeft,
+          child: Win98DesktopIcon(
+            icon: const SizedBox(width: 32, height: 32),
+            label: 'My Computer',
+            onSelected: () => log.add('select'),
+            onActivated: () => log.add('open'),
+          ),
+        ),
+      );
+      await tester.tap(find.text('My Computer'));
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.tap(find.text('My Computer'));
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(find.text('My Computer'));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(log, ['select', 'open']);
+    });
+
+    testWidgets('a selected icon highlights its label and tints the icon', (tester) async {
+      await tester.pumpHarness(
+        const Align(
+          alignment: Alignment.topLeft,
+          child: Win98DesktopIcon(
+            icon: SizedBox(width: 32, height: 32),
+            label: 'Recycle Bin',
+            selected: true,
+          ),
+        ),
+      );
+      final label = find.ancestor(of: find.text('Recycle Bin'), matching: find.byType(Container));
+      expect(tester.widget<Container>(label.first).color, const Win98ThemeData().selection);
+      expect(find.byType(ColorFiltered), findsOneWidget);
+    });
+  });
 }
 
 class _Counter extends StatefulWidget {

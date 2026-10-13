@@ -8,6 +8,7 @@ library;
 export 'src/bevel.dart';
 export 'src/button.dart';
 export 'src/color_dialog.dart';
+export 'src/desktop_icon.dart';
 export 'src/context_menu.dart';
 export 'src/dialog.dart';
 export 'src/dropdown.dart';
