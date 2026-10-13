@@ -34,6 +34,8 @@ class _GalleryState extends State<Gallery> {
   String _dropdown = 'floyd_steinberg';
   String? _listSelection = 'Gameboy';
   String? _file = 'win';
+  int _copies = 1;
+  String? _icon;
   Set<String> _expanded = {'c'};
   String? _node = 'win';
   int _sortColumn = 0;
@@ -133,6 +135,7 @@ class _GalleryState extends State<Gallery> {
                       Win98Tab(label: 'Lists', builder: (_) => _lists()),
                       Win98Tab(label: 'Explorer', builder: (_) => _explorer()),
                       Win98Tab(label: 'Dialogs', builder: (_) => _dialogs()),
+                      Win98Tab(label: 'Desktop', builder: (_) => _desktop()),
                     ],
                   ),
                 ),
@@ -255,6 +258,36 @@ class _GalleryState extends State<Gallery> {
         ),
         const SizedBox(height: 8),
         Win98Slider(value: _slider, divisions: 10, onChanged: (v) => setState(() => _slider = v)),
+        Row(
+          children: [
+            const Text('Copies: '),
+            SizedBox(
+              width: 100,
+              child: Win98SpinBox(
+                value: _copies,
+                min: 1,
+                max: 99,
+                onChanged: (v) => setState(() => _copies = v),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 60,
+          child: Win98ScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (var i = 0; i < 16; i++)
+                  Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Win98Button(onPressed: () {}, child: Text('Item $i')),
+                  ),
+              ],
+            ),
+          ),
+        ),
         Win98ProgressBar(value: _slider),
         const SizedBox(height: 8),
         Win98Dropdown<String>(
@@ -308,6 +341,54 @@ class _GalleryState extends State<Gallery> {
     ),
   );
 
+  // Desktop icons and windows that drag by their title bars.
+  Widget _desktop() => Win98Desktop(
+    child: Stack(
+      children: [
+        Win98WindowStack(
+          windows: [
+            Win98StackWindow(
+              id: 'notepad',
+              position: const Offset(90, 10),
+              size: const Size(220, 140),
+              child: Win98Window(
+                title: 'Notepad',
+                expand: true,
+                child: const Text('Drag me by the title bar.'),
+              ),
+            ),
+            Win98StackWindow(
+              id: 'paint',
+              position: const Offset(140, 70),
+              size: const Size(220, 140),
+              child: Win98Window(
+                title: 'Paint',
+                expand: true,
+                child: const Text('Tap a window to bring it to the front.'),
+              ),
+            ),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.all(4),
+          child: Wrap(
+            direction: Axis.vertical,
+            children: [
+              for (final name in ['My Computer', 'Recycle Bin'])
+                Win98DesktopIcon(
+                  icon: const _PixelFolder(),
+                  label: name,
+                  selected: _icon == name,
+                  onSelected: () => setState(() => _icon = name),
+                  onActivated: _about,
+                ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+
   Widget _dialogs() => Wrap(
     spacing: 6,
     runSpacing: 6,
@@ -339,4 +420,25 @@ class _GalleryState extends State<Gallery> {
       ),
     ],
   );
+}
+
+/// A 16×16 yellow folder drawn with PixelGlyph, shown at 2x.
+class _PixelFolder extends StatelessWidget {
+  const _PixelFolder();
+
+  @override
+  Widget build(BuildContext context) => const PixelGlyph([
+    '................',
+    '..#####.........',
+    '.#.....#........',
+    '#.......#######.',
+    '#..............#',
+    '#..............#',
+    '#..............#',
+    '#..............#',
+    '#..............#',
+    '#..............#',
+    '#..............#',
+    '.##############.',
+  ], color: Color(0xFFE8C840));
 }

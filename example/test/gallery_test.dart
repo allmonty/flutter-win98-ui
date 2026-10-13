@@ -11,7 +11,7 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       await tester.pumpWidget(const GalleryApp());
-      for (final tab in ['Lists', 'Explorer', 'Dialogs', 'Controls']) {
+      for (final tab in ['Lists', 'Explorer', 'Dialogs', 'Desktop', 'Controls']) {
         await tester.tap(find.text(tab));
         await tester.pump();
         expect(tester.takeException(), isNull, reason: '$tab page');

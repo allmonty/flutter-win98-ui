@@ -3,9 +3,9 @@
 [![CI](https://github.com/allmonty/flutter-win98-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/allmonty/flutter-win98-ui/actions/workflows/ci.yml)
 [![pub package](https://img.shields.io/pub/v/win98_ui.svg)](https://pub.dev/packages/win98_ui)
 
-A Windows 98 look-and-feel widget kit for Flutter: beveled windows, menus,
-toolbars, tabs, lists, trees, dialogs and a taskbar, drawn pixel by pixel
-the way Windows 98 drew them.
+A Windows 98 look-and-feel widget kit for Flutter: beveled windows you can
+drag, menus, toolbars, tabs, lists, trees, dialogs, desktop icons and a
+taskbar, drawn pixel by pixel the way Windows 98 drew them.
 
 It depends only on `package:flutter/widgets.dart`, with no Material or
 Cupertino, so it works under a `WidgetsApp`, `MaterialApp` or
@@ -58,8 +58,27 @@ shows every widget.
 | `Win98ContextMenu`, `Win98MenuPanel` | Opens a menu at the pointer on right-click or long press; the panel works in any popup |
 | `Win98Toolbar`, `Win98ToolButton`, `Win98ToolbarDivider` | Flat tool buttons that raise on hover and stay sunken when `selected` |
 | `Win98Taskbar`, `Win98Task` | Start button and menu, task buttons and a tray |
+| `Win98WindowStack`, `Win98StackWindow` | Overlapping windows dragged by their title bars; tapping one brings it to the front with the active title bar, and `bringToFront` does it from a taskbar |
+| `Win98DesktopIcon` | Icon over a white label; tap selects, double-tap opens |
 | `Win98StatusBar`, `Win98StatusPane` | Sunken panes |
 | `Win98Tooltip` | Yellow tooltip on hover or long press |
+
+![Desktop icons, two overlapping windows (the front one active) and a taskbar](https://raw.githubusercontent.com/allmonty/flutter-win98-ui/main/doc/screenshots/desktop.png)
+
+```dart
+Win98Desktop(
+  child: Win98WindowStack(
+    windows: [
+      Win98StackWindow(
+        id: 'notepad',
+        position: const Offset(40, 20),
+        size: const Size(260, 170),
+        child: Win98Window(title: 'Notepad', expand: true, child: const Text('Hi')),
+      ),
+    ],
+  ),
+)
+```
 
 ### Controls
 
@@ -75,14 +94,15 @@ shows every widget.
 
 ### Input
 
-![Text fields, a password field, a multi-line field, a drop-down, a slider and a list box](https://raw.githubusercontent.com/allmonty/flutter-win98-ui/main/doc/screenshots/inputs.png)
+![Text fields, a password field, a multi-line field, a drop-down, a slider, a spin box and a list box](https://raw.githubusercontent.com/allmonty/flutter-win98-ui/main/doc/screenshots/inputs.png)
 
 | Widget | Notes |
 |---|---|
 | `Win98TextField` | Sunken `EditableText`: password (`obscureText`), read-only, disabled, multi-line with a scrollbar, input formatters |
-| `Win98Dropdown<T>` | Combo box with a pop-up list, plus Previous/Next buttons to step through options without opening it |
+| `Win98Dropdown<T>` | Combo box with a pop-up list, plus Previous/Next buttons to step through options without opening it; Up/Down step while focused, Enter or Alt+Down opens |
+| `Win98SpinBox` | Whole-number field with ▲/▼ buttons; Up/Down keys, typed values clamped to `min`..`max` |
 | `Win98Slider` | Trackbar with ticks; drag, tap-to-jump, arrow keys |
-| `Win98ListBox<T>` | Selection highlight, double-tap to activate |
+| `Win98ListBox<T>` | Selection highlight, double-tap or Enter to activate, arrow keys move the selection |
 
 ### Lists and trees
 
@@ -90,9 +110,9 @@ shows every widget.
 
 | Widget | Notes |
 |---|---|
-| `Win98TreeView<T>`, `Win98TreeNode<T>` | Explorer's folder tree: dotted lines and `[+]`/`[-]` boxes; the parent controls expansion |
+| `Win98TreeView<T>`, `Win98TreeNode<T>` | Explorer's folder tree: dotted lines and `[+]`/`[-]` boxes; the parent controls expansion; Right/Left expand, collapse and step in or out |
 | `Win98ListView<T>`, `Win98ListColumn`, `Win98ListRow<T>` | Explorer's Details view: column headers with a sort arrow, fixed or flex widths, right-aligned numeric columns |
-| `Win98ScrollView`, `Win98Scrollbar` | Arrow buttons, dithered track, draggable thumb |
+| `Win98ScrollView`, `Win98Scrollbar` | Arrow buttons, dithered track, draggable thumb; vertical or horizontal (`scrollDirection` / `axis`) |
 
 ### Dialogs
 
@@ -171,7 +191,9 @@ class StickyButton extends StatelessWidget {
 Controls expose semantics such as button, checked, selected, expanded and
 value. Buttons, tool buttons, checkboxes and radio buttons take keyboard
 focus, show the dotted focus rectangle, and activate with Enter or Space.
-Sliders and open menus respond to arrow keys.
+List boxes, list views, trees, drop-downs, spin boxes, sliders and open
+menus respond to arrow keys; lists take focus when tapped and scroll the
+selection into view.
 
 ## Compared to other options
 
@@ -180,12 +202,14 @@ Sliders and open menus respond to arrow keys.
   fields). It's a good fit if your app is already a `MaterialApp`.
 - **win98_ui** uses no Material at all and draws Windows 98's details
   (gradient title bars, etched disabled text, dithered scrollbars). It also
-  covers more of the desktop: tree and list views, a taskbar, tabs,
-  submenus and context menus, and the color dialog.
+  covers more of the desktop: draggable windows, desktop icons, a taskbar,
+  tree and list views, tabs, submenus and context menus, a spin box and the
+  color dialog.
 
-Not included yet: window dragging and resizing (MDI), column resizing in
-`Win98ListView`, keyboard navigation in drop-downs, lists and trees, and
-Alt/F10 to reach the menu bar from the keyboard.
+Not included yet: resizing windows by their edges, scrolling both ways at
+once (a 2D scroll view), column resizing in `Win98ListView`, three-state
+checkboxes, editable combo boxes, and Alt/F10 to reach the menu bar from
+the keyboard.
 
 ## Font
 

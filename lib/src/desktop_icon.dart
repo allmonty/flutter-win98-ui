@@ -16,7 +16,7 @@ class Win98DesktopIcon extends StatelessWidget {
     this.selected = false,
     this.onSelected,
     this.onActivated,
-    this.width = 76,
+    this.width = 92,
   });
 
   /// The picture, usually 32×32: an image or a `PixelGlyph`.

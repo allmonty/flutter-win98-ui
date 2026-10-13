@@ -154,6 +154,7 @@ void main() {
                       onChanged: (_) {},
                     ),
                     Win98Slider(value: 0.6, divisions: 10, onChanged: (_) {}),
+                    Win98SpinBox(value: 12, onChanged: (_) {}),
                   ],
                 ),
               ),
@@ -262,6 +263,10 @@ void main() {
 
   testWidgets('explorer', (tester) async {
     await shot(tester, 'explorer', const Size(560, 300), const _ExplorerScene());
+  });
+
+  testWidgets('desktop', (tester) async {
+    await shot(tester, 'desktop', const Size(560, 360), const _DesktopScene());
   });
 
   testWidgets('theming', (tester) async {
@@ -516,4 +521,90 @@ class _ThemedWindow extends StatelessWidget {
       ),
     );
   }
+}
+
+class _DesktopScene extends StatelessWidget {
+  const _DesktopScene();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Expanded(
+          child: Stack(
+            children: [
+              Win98WindowStack(
+                windows: [
+                  Win98StackWindow(
+                    id: 'notepad',
+                    position: const Offset(100, 16),
+                    size: const Size(260, 170),
+                    child: Win98Window(
+                      title: 'readme.txt - Notepad',
+                      expand: true,
+                      onMinimize: () {},
+                      onClose: () {},
+                      child: const Text('Windows drag by their title bars.'),
+                    ),
+                  ),
+                  Win98StackWindow(
+                    id: 'paint',
+                    position: const Offset(200, 90),
+                    size: const Size(300, 190),
+                    child: Win98Window(
+                      title: 'untitled - Paint',
+                      expand: true,
+                      onMinimize: () {},
+                      onClose: () {},
+                      child: const Text('Tapping one brings it to the front.'),
+                    ),
+                  ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.all(6),
+                child: Wrap(
+                  direction: Axis.vertical,
+                  spacing: 8,
+                  children: const [
+                    Win98DesktopIcon(icon: _Folder(), label: 'My Computer', selected: true),
+                    Win98DesktopIcon(icon: _Folder(), label: 'Inbox'),
+                    Win98DesktopIcon(icon: _Folder(), label: 'Recycle Bin'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        Win98Taskbar(
+          startMenu: const [],
+          tasks: [
+            Win98Task(label: 'readme.txt - Notepad', onPressed: () {}),
+            Win98Task(label: 'untitled - Paint', active: true, onPressed: () {}),
+          ],
+          tray: const Text('12:00'),
+        ),
+      ],
+    );
+  }
+}
+
+class _Folder extends StatelessWidget {
+  const _Folder();
+
+  @override
+  Widget build(BuildContext context) => const PixelGlyph([
+    '..#####.........',
+    '.#######........',
+    '################',
+    '################',
+    '################',
+    '################',
+    '################',
+    '################',
+    '################',
+    '################',
+    '################',
+    '################',
+  ], color: Color(0xFFE8C840));
 }
