@@ -7,12 +7,22 @@ import 'button.dart';
 import 'glyphs.dart';
 import 'theme.dart';
 
-/// A vertically scrolling area with a Win98 scrollbar (arrow buttons,
-/// dithered track, draggable raised thumb). The bar is only shown when the
-/// content overflows.
+/// A scrolling area with a Win98 scrollbar (arrow buttons, dithered track,
+/// draggable raised thumb): on the right when vertical, at the bottom when
+/// [scrollDirection] is horizontal. The bar is only shown when the content
+/// overflows.
+///
+/// shortcut: one axis at a time; content scrolling both ways (a large image)
+/// needs a 2D version with the corner box.
 class Win98ScrollView extends StatefulWidget {
   /// A scroll view around [child].
-  const Win98ScrollView({super.key, required this.child, this.controller, this.padding});
+  const Win98ScrollView({
+    super.key,
+    required this.child,
+    this.controller,
+    this.padding,
+    this.scrollDirection = Axis.vertical,
+  });
 
   /// The scrolled content.
   final Widget child;
@@ -22,6 +32,9 @@ class Win98ScrollView extends StatefulWidget {
 
   /// Padding inside the scrolled area.
   final EdgeInsetsGeometry? padding;
+
+  /// The axis the content scrolls along.
+  final Axis scrollDirection;
 
   @override
   State<Win98ScrollView> createState() => _Win98ScrollViewState();
@@ -39,7 +52,11 @@ class _Win98ScrollViewState extends State<Win98ScrollView> {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final axis = widget.scrollDirection;
+    return Flex(
+      // The bar sits across the scroll axis: right of vertical content,
+      // below horizontal content.
+      direction: axis == Axis.vertical ? Axis.horizontal : Axis.vertical,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(
@@ -48,11 +65,12 @@ class _Win98ScrollViewState extends State<Win98ScrollView> {
             child: SingleChildScrollView(
               controller: _controller,
               padding: widget.padding,
+              scrollDirection: axis,
               child: widget.child,
             ),
           ),
         ),
-        Win98Scrollbar(controller: _controller),
+        Win98Scrollbar(controller: _controller, axis: axis),
       ],
     );
   }
@@ -72,17 +90,26 @@ class _NoGlowBehavior extends ScrollBehavior {
   ScrollPhysics getScrollPhysics(BuildContext context) => const ClampingScrollPhysics();
 }
 
-/// A vertical scrollbar driving `controller`. Place it next to the
-/// scrollable that uses the same controller.
+/// A scrollbar driving `controller`: vertical by default, horizontal when
+/// [axis] is. Place it next to (or under) the scrollable that uses the same
+/// controller.
 class Win98Scrollbar extends StatefulWidget {
   /// A scrollbar for [controller].
-  const Win98Scrollbar({super.key, required this.controller, this.step = 40});
+  const Win98Scrollbar({
+    super.key,
+    required this.controller,
+    this.step = 40,
+    this.axis = Axis.vertical,
+  });
 
   /// The controller of the scrollable this bar drives.
   final ScrollController controller;
 
   /// Pixels scrolled per arrow tap.
   final double step;
+
+  /// The scroll axis of the scrollable this bar drives.
+  final Axis axis;
 
   @override
   State<Win98Scrollbar> createState() => _Win98ScrollbarState();
@@ -136,6 +163,7 @@ class _Win98ScrollbarState extends State<Win98Scrollbar> {
       return const SizedBox.shrink();
     }
     final size = theme.scrollbarSize;
+    final vertical = widget.axis == Axis.vertical;
     Widget arrow(List<String> glyph, double delta, String label) => Win98Button(
       onPressed: () => _scrollBy(delta),
       minWidth: size,
@@ -146,14 +174,18 @@ class _Win98ScrollbarState extends State<Win98Scrollbar> {
     );
 
     return SizedBox(
-      width: size,
-      child: Column(
+      width: vertical ? size : null,
+      height: vertical ? null : size,
+      child: Flex(
+        direction: widget.axis,
         children: [
-          arrow(Win98Glyphs.arrowUp, -widget.step, 'Scroll up'),
+          vertical
+              ? arrow(Win98Glyphs.arrowUp, -widget.step, 'Scroll up')
+              : arrow(Win98Glyphs.arrowLeft, -widget.step, 'Scroll left'),
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final track = constraints.maxHeight;
+                final track = vertical ? constraints.maxHeight : constraints.maxWidth;
                 final content = p.maxScrollExtent + p.viewportDimension;
                 final thumb = math
                     .max(size, track * p.viewportDimension / content)
@@ -166,22 +198,34 @@ class _Win98ScrollbarState extends State<Win98Scrollbar> {
                   behavior: HitTestBehavior.opaque,
                   // Clicking the track pages up/down, as in Win98.
                   onTapDown: (d) => _scrollBy(
-                    d.localPosition.dy < offset ? -p.viewportDimension : p.viewportDimension,
+                    (vertical ? d.localPosition.dy : d.localPosition.dx) < offset
+                        ? -p.viewportDimension
+                        : p.viewportDimension,
                   ),
                   child: CustomPaint(
                     painter: _TrackPainter(theme),
                     child: Stack(
                       children: [
                         Positioned(
-                          top: offset,
-                          left: 0,
-                          right: 0,
-                          height: thumb,
+                          top: vertical ? offset : 0,
+                          bottom: vertical ? null : 0,
+                          left: vertical ? 0 : offset,
+                          right: vertical ? 0 : null,
+                          height: vertical ? thumb : null,
+                          width: vertical ? null : thumb,
                           child: GestureDetector(
-                            onVerticalDragUpdate: (d) {
-                              if (range <= 0) return;
-                              _scrollBy(d.delta.dy / range * p.maxScrollExtent);
-                            },
+                            onVerticalDragUpdate: vertical
+                                ? (d) {
+                                    if (range <= 0) return;
+                                    _scrollBy(d.delta.dy / range * p.maxScrollExtent);
+                                  }
+                                : null,
+                            onHorizontalDragUpdate: vertical
+                                ? null
+                                : (d) {
+                                    if (range <= 0) return;
+                                    _scrollBy(d.delta.dx / range * p.maxScrollExtent);
+                                  },
                             child: const Bevel(style: BevelStyle.raised),
                           ),
                         ),
@@ -192,7 +236,9 @@ class _Win98ScrollbarState extends State<Win98Scrollbar> {
               },
             ),
           ),
-          arrow(Win98Glyphs.arrowDown, widget.step, 'Scroll down'),
+          vertical
+              ? arrow(Win98Glyphs.arrowDown, widget.step, 'Scroll down')
+              : arrow(Win98Glyphs.arrowRight, widget.step, 'Scroll right'),
         ],
       ),
     );

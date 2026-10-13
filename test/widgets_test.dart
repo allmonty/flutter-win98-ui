@@ -708,6 +708,28 @@ void main() {
       await tester.pump();
       expect(controller.offset, 0);
     });
+
+    testWidgets('a horizontal view puts the bar below and scrolls sideways', (tester) async {
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      await tester.pumpHarness(
+        Win98ScrollView(
+          controller: controller,
+          scrollDirection: Axis.horizontal,
+          child: const SizedBox(width: 1000, height: 50),
+        ),
+        size: const Size(200, 200),
+      );
+      await tester.pump();
+      final bar = tester.getRect(find.byType(Win98Scrollbar));
+      expect(bar.width, greaterThan(bar.height), reason: 'a horizontal bar');
+      await tester.tap(find.bySemanticsLabel('Scroll right'));
+      await tester.pump();
+      expect(controller.offset, 40);
+      await tester.tap(find.bySemanticsLabel('Scroll left'));
+      await tester.pump();
+      expect(controller.offset, 0);
+    });
   });
 
   group('Win98TextField', () {
