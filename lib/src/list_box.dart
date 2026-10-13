@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import 'bevel.dart';
+import 'list_keyboard.dart';
 import 'scroll.dart';
 import 'theme.dart';
 
@@ -20,6 +21,9 @@ class Win98ListItem<T> {
 }
 
 /// A sunken white list with a navy selection highlight.
+///
+/// Once tapped it takes keyboard focus: Up/Down/Home/End move the selection
+/// and Enter activates it.
 class Win98ListBox<T> extends StatelessWidget {
   /// A list of [items] with [selected] highlighted.
   const Win98ListBox({
@@ -49,14 +53,25 @@ class Win98ListBox<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Win98Theme.of(context);
-    return SizedBox(
-      height: height ?? double.infinity,
-      child: Bevel(
-        style: BevelStyle.field,
-        child: Win98ScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [for (final item in items) _row(theme, item, item.value == selected)],
+    return ListKeyboard<T>(
+      values: [for (final item in items) item.value],
+      selected: selected,
+      onSelected: onSelected,
+      onActivated: onActivated,
+      builder: (context, selectedKey) => SizedBox(
+        height: height ?? double.infinity,
+        child: Bevel(
+          style: BevelStyle.field,
+          child: Win98ScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final item in items)
+                  item.value == selected
+                      ? KeyedSubtree(key: selectedKey, child: _row(theme, item, true))
+                      : _row(theme, item, false),
+              ],
+            ),
           ),
         ),
       ),

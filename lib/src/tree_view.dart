@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart' show listEquals;
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'bevel.dart';
+import 'list_keyboard.dart';
 import 'scroll.dart';
 import 'theme.dart';
 
@@ -33,6 +35,10 @@ class Win98TreeNode<T> {
 ///
 /// Expansion is controlled by the parent: [expanded] holds the values of the
 /// open nodes, and [onExpansionChanged] reports a toggle.
+///
+/// Once tapped it takes keyboard focus: Up/Down/Home/End move the selection,
+/// Right expands a node (or steps into it), Left collapses it (or steps out to
+/// its parent), and Enter activates it.
 class Win98TreeView<T> extends StatelessWidget {
   /// A tree of [roots].
   const Win98TreeView({
@@ -73,26 +79,62 @@ class Win98TreeView<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Win98Theme.of(context);
-    final rows = <Widget>[];
-    void visit(List<Win98TreeNode<T>> nodes, List<bool> moreAbove) {
+    // The visible nodes in display order, each with what its row needs.
+    final visible = <(Win98TreeNode<T>, Win98TreeNode<T>?, Widget)>[];
+    void visit(List<Win98TreeNode<T>> nodes, List<bool> moreAbove, Win98TreeNode<T>? parent) {
       for (var i = 0; i < nodes.length; i++) {
         final node = nodes[i];
         final last = i == nodes.length - 1;
         final open = expanded.contains(node.value);
         final first = moreAbove.isEmpty && i == 0;
-        rows.add(_row(theme, node, moreAbove, first, last, open));
-        if (open && node.children.isNotEmpty) visit(node.children, [...moreAbove, !last]);
+        visible.add((node, parent, _row(theme, node, moreAbove, first, last, open)));
+        if (open && node.children.isNotEmpty) visit(node.children, [...moreAbove, !last], node);
       }
     }
 
-    visit(roots, const []);
-    return SizedBox(
-      height: height ?? double.infinity,
-      child: Bevel(
-        style: BevelStyle.field,
-        child: Win98ScrollView(
-          padding: const EdgeInsets.all(2),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: rows),
+    visit(roots, const [], null);
+
+    KeyEventResult onOtherKey(LogicalKeyboardKey key) {
+      final i = visible.indexWhere((v) => v.$1.value == selected);
+      if (i < 0) return KeyEventResult.ignored;
+      final (node, parent, _) = visible[i];
+      final open = expanded.contains(node.value);
+      if (key == LogicalKeyboardKey.arrowRight && node.children.isNotEmpty) {
+        open
+            ? onSelected?.call(node.children.first.value)
+            : onExpansionChanged?.call(node.value, true);
+      } else if (key == LogicalKeyboardKey.arrowLeft) {
+        if (open && node.children.isNotEmpty) {
+          onExpansionChanged?.call(node.value, false);
+        } else if (parent != null) {
+          onSelected?.call(parent.value);
+        }
+      } else {
+        return KeyEventResult.ignored;
+      }
+      return KeyEventResult.handled;
+    }
+
+    return ListKeyboard<T>(
+      values: [for (final v in visible) v.$1.value],
+      selected: selected,
+      onSelected: onSelected,
+      onActivated: onActivated,
+      onOtherKey: onOtherKey,
+      builder: (context, selectedKey) => SizedBox(
+        height: height ?? double.infinity,
+        child: Bevel(
+          style: BevelStyle.field,
+          child: Win98ScrollView(
+            padding: const EdgeInsets.all(2),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final (node, _, row) in visible)
+                  node.value == selected ? KeyedSubtree(key: selectedKey, child: row) : row,
+              ],
+            ),
+          ),
         ),
       ),
     );

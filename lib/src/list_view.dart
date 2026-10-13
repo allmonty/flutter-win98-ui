@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import 'bevel.dart';
 import 'glyphs.dart';
+import 'list_keyboard.dart';
 import 'scroll.dart';
 import 'theme.dart';
 
@@ -41,6 +42,9 @@ class Win98ListRow<T> {
 
 /// Explorer's "Details" view: a sunken list with column headers and a full
 /// row selection highlight. Tapping a header calls [onSort].
+///
+/// Once tapped it takes keyboard focus: Up/Down/Home/End move the selection
+/// and Enter activates it.
 ///
 /// shortcut: columns can't be resized or scrolled sideways, and flex columns
 /// shift by the scrollbar's width against their headers once rows overflow;
@@ -104,23 +108,34 @@ class Win98ListView<T> extends StatelessWidget {
     final header = Row(
       children: [for (var i = 0; i < columns.length; i++) _cell(columns[i], _header(theme, i))],
     );
-    return SizedBox(
-      height: height ?? double.infinity,
-      child: Bevel(
-        style: BevelStyle.field,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            header,
-            Expanded(
-              child: Win98ScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [for (final row in rows) _row(theme, row, row.value == selected)],
+    return ListKeyboard<T>(
+      values: [for (final row in rows) row.value],
+      selected: selected,
+      onSelected: onSelected,
+      onActivated: onActivated,
+      builder: (context, selectedKey) => SizedBox(
+        height: height ?? double.infinity,
+        child: Bevel(
+          style: BevelStyle.field,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              header,
+              Expanded(
+                child: Win98ScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final row in rows)
+                        row.value == selected
+                            ? KeyedSubtree(key: selectedKey, child: _row(theme, row, true))
+                            : _row(theme, row, false),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

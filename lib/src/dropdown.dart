@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'bevel.dart';
@@ -21,6 +22,9 @@ class Win98DropdownItem<T> {
 /// A drop-down combo box: a sunken field showing the selection, an arrow
 /// button, a pop-up list, and Previous/Next buttons to step through
 /// [items] without opening the list.
+///
+/// Once tapped it takes keyboard focus: Up/Down change the selection without
+/// opening the list, and Enter, Space or Alt+Down open it.
 class Win98Dropdown<T> extends StatelessWidget {
   /// A drop-down showing [value]'s label.
   const Win98Dropdown({
@@ -63,6 +67,26 @@ class Win98Dropdown<T> extends StatelessWidget {
     return -1;
   }
 
+  /// Keyboard handling while the list is closed.
+  KeyEventResult _onKey(KeyEvent event, VoidCallback toggle) {
+    if (event is KeyUpEvent || onChanged == null) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+    final down = key == LogicalKeyboardKey.arrowDown;
+    if ((down && HardwareKeyboard.instance.isAltPressed) ||
+        key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.space) {
+      toggle();
+    } else if (down || key == LogicalKeyboardKey.arrowUp) {
+      // Unlike the Previous/Next buttons, the arrow keys stop at the ends.
+      if (items.isEmpty) return KeyEventResult.handled;
+      final next = (_index + (down ? 1 : -1)).clamp(0, items.length - 1);
+      if (items[next].value != value) onChanged!(items[next].value);
+    } else {
+      return KeyEventResult.ignored;
+    }
+    return KeyEventResult.handled;
+  }
+
   void _step(int delta) {
     if (items.isEmpty) return;
     final next = (_index + delta) % items.length;
@@ -88,50 +112,77 @@ class Win98Dropdown<T> extends StatelessWidget {
         Expanded(
           child: Win98PopupAnchor(
             matchWidth: true,
-            builder: (context, isOpen, toggle) => Semantics(
-              button: true,
-              enabled: enabled,
-              label: semanticLabel,
-              value: _label,
-              excludeSemantics: true,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: enabled ? toggle : null,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: theme.controlHeight),
-                  child: Bevel(
-                    style: BevelStyle.field,
-                    color: enabled ? theme.window : theme.face,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: Text(
-                              _label,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: enabled ? theme.textStyle : theme.disabledTextStyle,
-                            ),
+            builder: (context, isOpen, toggle) => Focus(
+              canRequestFocus: enabled,
+              onKeyEvent: (_, event) => _onKey(event, toggle),
+              child: Builder(
+                builder: (context) {
+                  final focused = Focus.of(context).hasFocus;
+                  return Semantics(
+                    button: true,
+                    enabled: enabled,
+                    label: semanticLabel,
+                    value: _label,
+                    excludeSemantics: true,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: enabled
+                          ? () {
+                              Focus.of(context).requestFocus();
+                              toggle();
+                            }
+                          : null,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(minHeight: theme.controlHeight),
+                        child: Bevel(
+                          style: BevelStyle.field,
+                          color: enabled ? theme.window : theme.face,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                                  // Win98 highlights the focused combo box's text.
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    heightFactor: 1,
+                                    child: Container(
+                                      color: focused && !isOpen ? theme.selection : null,
+                                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                                      child: Text(
+                                        _label,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: !enabled
+                                            ? theme.disabledTextStyle
+                                            : focused && !isOpen
+                                            ? theme.textStyle.copyWith(color: theme.selectionText)
+                                            : theme.textStyle,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              IgnorePointer(
+                                child: Win98Button(
+                                  onPressed: enabled ? () {} : null,
+                                  minWidth: theme.scrollbarSize,
+                                  minHeight: theme.controlHeight - 4,
+                                  padding: EdgeInsets.zero,
+                                  child: PixelGlyph(
+                                    Win98Glyphs.arrowDown,
+                                    color: enabled ? theme.text : theme.disabledText,
+                                    pixelSize: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        IgnorePointer(
-                          child: Win98Button(
-                            onPressed: enabled ? () {} : null,
-                            minWidth: theme.scrollbarSize,
-                            minHeight: theme.controlHeight - 4,
-                            padding: EdgeInsets.zero,
-                            child: PixelGlyph(
-                              Win98Glyphs.arrowDown,
-                              color: enabled ? theme.text : theme.disabledText,
-                              pixelSize: 1.5,
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
             ),
             popupBuilder: (context, close) => _DropdownList<T>(

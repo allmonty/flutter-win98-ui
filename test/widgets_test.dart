@@ -1346,6 +1346,143 @@ void main() {
       expect(find.byType(ColorFiltered), findsOneWidget);
     });
   });
+
+  group('keyboard navigation in lists', () {
+    testWidgets('list box: arrows, Home/End and Enter; the selection scrolls into view', (
+      tester,
+    ) async {
+      var selected = 'item 0';
+      final activated = <String>[];
+      await tester.pumpHarness(
+        StatefulBuilder(
+          builder: (context, setState) => Win98ListBox<String>(
+            height: 120,
+            items: [for (var i = 0; i < 20; i++) Win98ListItem(value: 'item $i', label: 'item $i')],
+            selected: selected,
+            onSelected: (v) => setState(() => selected = v),
+            onActivated: activated.add,
+          ),
+        ),
+      );
+      await tester.tap(find.text('item 0'));
+      // Rows also take double-taps, so a single tap settles after a wait.
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+      expect(selected, 'item 1');
+      await tester.sendKeyEvent(LogicalKeyboardKey.end);
+      await tester.pump();
+      await tester.pump();
+      expect(selected, 'item 19');
+      final box = tester.getRect(find.byType(Win98ListBox<String>));
+      expect(
+        box.contains(tester.getCenter(find.text('item 19'))),
+        isTrue,
+        reason: 'scrolled into view',
+      );
+      await tester.sendKeyEvent(LogicalKeyboardKey.home);
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pump();
+      expect(selected, 'item 0', reason: 'stops at the top');
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      expect(activated, ['item 0']);
+    });
+
+    testWidgets('list view: Down then Enter', (tester) async {
+      var selected = 'a';
+      final activated = <String>[];
+      await tester.pumpHarness(
+        StatefulBuilder(
+          builder: (context, setState) => Win98ListView<String>(
+            columns: const [Win98ListColumn(label: 'Name')],
+            rows: const [
+              Win98ListRow(value: 'a', cells: ['A']),
+              Win98ListRow(value: 'b', cells: ['B']),
+            ],
+            selected: selected,
+            onSelected: (v) => setState(() => selected = v),
+            onActivated: activated.add,
+          ),
+        ),
+      );
+      await tester.tap(find.text('A'));
+      // Rows also take double-taps, so a single tap settles after a wait.
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      expect(activated, ['b']);
+    });
+
+    testWidgets('tree: Right expands then steps in, Left steps out then collapses', (tester) async {
+      var selected = 'c';
+      var expanded = <String>{};
+      await tester.pumpHarness(
+        StatefulBuilder(
+          builder: (context, setState) => Win98TreeView<String>(
+            roots: const [
+              Win98TreeNode(
+                value: 'c',
+                label: 'C:',
+                children: [Win98TreeNode(value: 'win', label: 'WINDOWS')],
+              ),
+            ],
+            expanded: expanded,
+            onExpansionChanged: (v, open) =>
+                setState(() => expanded = open ? {...expanded, v} : ({...expanded}..remove(v))),
+            selected: selected,
+            onSelected: (v) => setState(() => selected = v),
+          ),
+        ),
+      );
+      await tester.tap(find.text('C:'));
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      expect(expanded, {'c'});
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      expect(selected, 'win');
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pump();
+      expect(selected, 'c');
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pump();
+      expect(expanded, isEmpty);
+    });
+
+    testWidgets('drop-down: arrows change the value closed, Alt+Down opens', (tester) async {
+      var value = 1;
+      await tester.pumpHarness(
+        StatefulBuilder(
+          builder: (context, setState) => Win98Dropdown<int>(
+            value: value,
+            items: const [
+              Win98DropdownItem(value: 1, label: 'One'),
+              Win98DropdownItem(value: 2, label: 'Two'),
+            ],
+            onChanged: (v) => setState(() => value = v),
+          ),
+        ),
+      );
+      await tester.tap(find.text('One'));
+      await tester.pump();
+      await tester.tap(find.text('One').last); // pick from the list to close it
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+      expect(value, 2);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+      expect(value, 2, reason: 'stops at the last option');
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.altLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
+      await tester.pump();
+      expect(find.text('One'), findsOneWidget, reason: 'the list is open');
+    });
+  });
 }
 
 class _Counter extends StatefulWidget {
