@@ -448,7 +448,14 @@ void main() {
       await tester.pump();
       // The panel doesn't grow past maxHeight (plus its own bevel chrome,
       // a few pixels of border/padding around the capped content)...
-      final panel = tester.getRect(find.byType(Win98MenuPanel));
+      final panel = tester.getRect(
+        find
+            .ancestor(
+              of: find.text('Preset 0'),
+              matching: find.byWidgetPredicate((w) => w is Bevel && w.style == BevelStyle.window),
+            )
+            .first,
+      );
       expect(panel.height, lessThanOrEqualTo(140));
       // ...so the scrollable content lays out past the visible panel (it's
       // there, just off-screen until scrolled to), reachable via a
@@ -456,6 +463,90 @@ void main() {
       expect(find.text('Preset 0'), findsOneWidget);
       expect(tester.getRect(find.text('Preset 29')).top, greaterThan(panel.bottom));
       expect(find.byType(Win98Scrollbar), findsOneWidget);
+    });
+  });
+
+  group('Win98MenuBar submenus and keyboard', () {
+    Widget bar(List<String> log) => Win98MenuBar(
+      menus: [
+        Win98Menu(
+          label: 'File',
+          items: [
+            Win98MenuItem(label: 'New', onSelected: () => log.add('new')),
+            const Win98MenuItem(label: 'Disabled'),
+            Win98MenuItem(
+              label: 'Export',
+              children: [
+                Win98MenuItem(label: 'PNG', onSelected: () => log.add('png')),
+                Win98MenuItem(label: 'GIF', onSelected: () => log.add('gif')),
+              ],
+            ),
+          ],
+        ),
+        Win98Menu(
+          label: 'Help',
+          items: [Win98MenuItem(label: 'About', onSelected: () => log.add('about'))],
+        ),
+      ],
+    );
+
+    testWidgets('a submenu opens on tap and its item closes every menu', (tester) async {
+      final log = <String>[];
+      await tester.pumpHarness(bar(log), size: const Size(360, 400));
+      await tester.tap(find.text('File'));
+      await tester.pump();
+      expect(find.text('PNG'), findsNothing);
+      await tester.tap(find.text('Export'));
+      await tester.pump();
+      expect(find.text('PNG'), findsOneWidget);
+      // The submenu opens beside its item, not over it.
+      expect(
+        tester.getRect(find.text('PNG')).left,
+        greaterThan(tester.getRect(find.text('Export')).right),
+      );
+      await tester.tap(find.text('GIF'));
+      await tester.pump();
+      expect(log, ['gif']);
+      expect(find.text('New'), findsNothing);
+      expect(find.text('GIF'), findsNothing);
+    });
+
+    testWidgets('arrow keys move, open submenus and switch menus', (tester) async {
+      final log = <String>[];
+      await tester.pumpHarness(bar(log), size: const Size(360, 400));
+      await tester.tap(find.text('File'));
+      await tester.pump();
+      await tester.pump();
+      // Down lands on New, Down again skips the disabled item to Export.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('PNG'), findsOneWidget);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pump();
+      expect(find.text('PNG'), findsNothing, reason: 'Left closes the submenu');
+      expect(find.text('New'), findsOneWidget, reason: '...but not its parent');
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+      expect(log, ['png']);
+      expect(find.text('New'), findsNothing);
+
+      await tester.tap(find.text('File'));
+      await tester.pump();
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('About'), findsOneWidget, reason: 'Left on File wraps to Help');
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pump();
+      expect(find.text('About'), findsNothing);
     });
   });
 
