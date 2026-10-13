@@ -16,8 +16,11 @@ enum BevelStyle {
   /// Sunken fields (text boxes, list boxes, checkboxes).
   field,
 
-  /// A shallow one-line sunken edge (status bar panes).
+  /// A shallow one-line sunken edge (status bar panes, pressed tool buttons).
   status,
+
+  /// A shallow one-line raised edge (tool buttons under the pointer).
+  thinRaised,
 
   /// Group-box frame: a shadow line with a highlight line inside it.
   etched,
@@ -26,8 +29,8 @@ enum BevelStyle {
   outline,
 }
 
-/// Paints a 2-pixel Win98 bevel (1 pixel for [BevelStyle.status]) around a
-/// rectangle.
+/// Paints a 2-pixel Win98 bevel (1 pixel for [BevelStyle.status],
+/// [BevelStyle.thinRaised] and [BevelStyle.outline]) around a rectangle.
 class BevelPainter extends CustomPainter {
   const BevelPainter({required this.style, required this.theme});
 
@@ -36,7 +39,7 @@ class BevelPainter extends CustomPainter {
 
   /// Width of the border drawn for `style`.
   static double widthOf(BevelStyle style) => switch (style) {
-    BevelStyle.status || BevelStyle.outline => 1,
+    BevelStyle.status || BevelStyle.thinRaised || BevelStyle.outline => 1,
     _ => 2,
   };
 
@@ -58,6 +61,8 @@ class BevelPainter extends CustomPainter {
         _frame(canvas, size, 1, t.darkShadow, t.light);
       case BevelStyle.status:
         _frame(canvas, size, 0, t.shadow, t.highlight);
+      case BevelStyle.thinRaised:
+        _frame(canvas, size, 0, t.highlight, t.shadow);
       case BevelStyle.etched:
         _frame(canvas, size, 0, t.shadow, t.highlight);
         _frame(canvas, size, 1, t.highlight, t.shadow);

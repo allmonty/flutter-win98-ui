@@ -15,6 +15,7 @@ class Win98Window extends StatelessWidget {
     this.icon,
     this.active = true,
     this.menuBar,
+    this.toolbar,
     this.statusBar,
     this.onMinimize,
     this.onMaximize,
@@ -27,6 +28,9 @@ class Win98Window extends StatelessWidget {
   final Widget? icon;
   final bool active;
   final Widget? menuBar;
+
+  /// Shown under [menuBar], usually a `Win98Toolbar`.
+  final Widget? toolbar;
   final Widget? statusBar;
 
   /// Caption buttons are shown only for non-null callbacks.
@@ -58,6 +62,7 @@ class Win98Window extends StatelessWidget {
             onClose: onClose,
           ),
           ?menuBar,
+          ?toolbar,
           Flexible(
             fit: expand ? FlexFit.tight : FlexFit.loose,
             child: Padding(padding: bodyPadding, child: child),

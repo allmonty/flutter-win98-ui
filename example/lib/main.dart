@@ -33,12 +33,21 @@ class _GalleryState extends State<Gallery> {
   double _slider = 0.5;
   String _dropdown = 'floyd_steinberg';
   String? _listSelection = 'Gameboy';
+  bool _bold = false;
+  bool _italic = false;
   Color _color = const Color(0xFF008080);
   final _text = TextEditingController(text: 'Hello, 1998');
+  final _password = TextEditingController(text: 'hunter2');
+  final _notes = TextEditingController(
+    text:
+        'A multi-line field.\nIt scrolls with a Win98 scrollbar\nonce the text\nis longer\nthan its\nmaxLines.',
+  );
 
   @override
   void dispose() {
     _text.dispose();
+    _password.dispose();
+    _notes.dispose();
     super.dispose();
   }
 
@@ -65,6 +74,25 @@ class _GalleryState extends State<Gallery> {
                     const Win98MenuItem(label: 'Exit'),
                   ],
                 ),
+              ],
+            ),
+            toolbar: Win98Toolbar(
+              children: [
+                Win98ToolButton(
+                  tooltip: 'Bold',
+                  selected: _bold,
+                  onPressed: () => setState(() => _bold = !_bold),
+                  child: const Text('B', style: TextStyle(fontWeight: FontWeight.w700)),
+                ),
+                Win98ToolButton(
+                  tooltip: 'Italic',
+                  selected: _italic,
+                  onPressed: () => setState(() => _italic = !_italic),
+                  child: const Text('I', style: TextStyle(fontStyle: FontStyle.italic)),
+                ),
+                const Win98ToolbarDivider(),
+                Win98ToolButton(tooltip: 'About', onPressed: _about, child: const Text('?')),
+                const Win98ToolButton(tooltip: 'Disabled', onPressed: null, child: Text('X')),
               ],
             ),
             statusBar: Win98StatusBar(
@@ -126,6 +154,10 @@ class _GalleryState extends State<Gallery> {
         const SizedBox(height: 8),
         Win98TextField(controller: _text),
         const SizedBox(height: 8),
+        Win98TextField(controller: _password, obscureText: true),
+        const SizedBox(height: 8),
+        Win98TextField(controller: _notes, maxLines: 4),
+        const SizedBox(height: 8),
         Row(
           children: [
             Win98Button(isDefault: true, onPressed: () {}, child: const Text('OK')),
@@ -137,14 +169,28 @@ class _GalleryState extends State<Gallery> {
     ),
   );
 
-  Widget _lists() => Win98ListBox<String>(
-    height: 220,
+  // Right-click (or long-press) the list for a context menu.
+  Widget _lists() => Win98ContextMenu(
     items: [
-      for (final name in ['Gameboy', 'CGA', 'EGA', 'C64', 'NES', 'PICO-8', 'Teletext', 'Sepia'])
-        Win98ListItem(value: name, label: name),
+      Win98MenuItem(
+        label: 'Select Gameboy',
+        onSelected: () => setState(() => _listSelection = 'Gameboy'),
+      ),
+      const Win98MenuDivider(),
+      Win98MenuItem(
+        label: 'Clear selection',
+        onSelected: () => setState(() => _listSelection = null),
+      ),
     ],
-    selected: _listSelection,
-    onSelected: (v) => setState(() => _listSelection = v),
+    child: Win98ListBox<String>(
+      height: 220,
+      items: [
+        for (final name in ['Gameboy', 'CGA', 'EGA', 'C64', 'NES', 'PICO-8', 'Teletext', 'Sepia'])
+          Win98ListItem(value: name, label: name),
+      ],
+      selected: _listSelection,
+      onSelected: (v) => setState(() => _listSelection = v),
+    ),
   );
 
   Widget _dialogs() => Wrap(

@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -809,6 +810,110 @@ void main() {
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
       expect(await result, isNull);
+    });
+  });
+
+  group('Win98Tooltip', () {
+    testWidgets('shows after the pointer rests, hides when it leaves', (tester) async {
+      await tester.pumpHarness(
+        const Center(
+          child: Win98Tooltip(message: 'Save the file', child: Text('Save')),
+        ),
+      );
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      addTearDown(mouse.removePointer);
+      await mouse.addPointer(location: Offset.zero);
+      await mouse.moveTo(tester.getCenter(find.text('Save')));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('Save the file'), findsNothing);
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('Save the file'), findsOneWidget);
+      await mouse.moveTo(Offset.zero);
+      await tester.pump();
+      expect(find.text('Save the file'), findsNothing);
+    });
+
+    testWidgets('a long press shows it for showDuration', (tester) async {
+      await tester.pumpHarness(
+        const Center(
+          child: Win98Tooltip(message: 'Save the file', child: Text('Save')),
+        ),
+      );
+      await tester.longPress(find.text('Save'));
+      await tester.pump();
+      expect(find.text('Save the file'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 3));
+      expect(find.text('Save the file'), findsNothing);
+    });
+  });
+
+  group('Win98ToolButton', () {
+    testWidgets('taps, disables and shows the selected state', (tester) async {
+      var taps = 0;
+      await tester.pumpHarness(
+        Win98Toolbar(
+          children: [
+            Win98ToolButton(onPressed: () => taps++, child: const Text('B')),
+            const Win98ToolbarDivider(),
+            const Win98ToolButton(onPressed: null, child: Text('I')),
+            Win98ToolButton(onPressed: () {}, selected: true, child: const Text('U')),
+          ],
+        ),
+      );
+      await tester.tap(find.text('B'));
+      await tester.tap(find.text('I'));
+      expect(taps, 1);
+      final selected = find.ancestor(of: find.text('U'), matching: find.byType(Bevel));
+      expect(tester.widget<Bevel>(selected.first).style, BevelStyle.status);
+      expect(
+        find.ancestor(of: find.text('B'), matching: find.byType(Bevel)),
+        findsNothing,
+        reason: 'flat at rest',
+      );
+    });
+
+    testWidgets('a tooltip wraps the button', (tester) async {
+      await tester.pumpHarness(
+        Win98ToolButton(onPressed: () {}, tooltip: 'Bold', child: const Text('B')),
+      );
+      expect(find.byType(Win98Tooltip), findsOneWidget);
+    });
+  });
+
+  group('Win98ContextMenu', () {
+    testWidgets('opens on right-click and runs the chosen item', (tester) async {
+      var copied = 0;
+      await tester.pumpHarness(
+        Win98ContextMenu(
+          items: [
+            Win98MenuItem(label: 'Copy', onSelected: () => copied++),
+            const Win98MenuItem(label: 'Paste'),
+          ],
+          child: const SizedBox(width: 200, height: 100, child: Text('Canvas')),
+        ),
+      );
+      await tester.tap(find.text('Canvas'), buttons: kSecondaryButton);
+      await tester.pump();
+      expect(find.text('Paste'), findsOneWidget);
+      await tester.tap(find.text('Copy'));
+      await tester.pump();
+      expect(copied, 1);
+      expect(find.text('Paste'), findsNothing);
+    });
+
+    testWidgets('opens on long press and closes on an outside tap', (tester) async {
+      await tester.pumpHarness(
+        Win98ContextMenu(
+          items: [Win98MenuItem(label: 'Copy', onSelected: () {})],
+          child: const SizedBox(width: 200, height: 100, child: Text('Canvas')),
+        ),
+      );
+      await tester.longPress(find.text('Canvas'));
+      await tester.pump();
+      expect(find.text('Copy'), findsOneWidget);
+      await tester.tapAt(const Offset(5, 5));
+      await tester.pump();
+      expect(find.text('Copy'), findsNothing);
     });
   });
 }
