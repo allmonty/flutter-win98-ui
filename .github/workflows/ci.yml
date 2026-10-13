@@ -26,5 +26,5 @@ jobs:
       - run: dart format --output=none --set-exit-if-changed .
       - run: flutter test
       - working-directory: example
-        run: flutter pub get && flutter analyze
+        run: flutter pub get && flutter analyze && flutter test
       - run: flutter pub publish --dry-run
